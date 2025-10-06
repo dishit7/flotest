@@ -11,13 +11,13 @@ export default function Home() {
         <header className="space-y-2">
           <Badge>flobase</Badge>
           <h1 className="text-3xl font-bold tracking-tight">Welcome to flobase</h1>
-          <p className="text-muted-foreground">Starter powered by Next.js, Tailwind and shadcn/ui.</p>
+          <p className="text-muted-foreground">Starter powered by Next.js, Tailwind and shadcn/ui with Supabase Auth.</p>
         </header>
 
         <Card>
           <CardHeader>
             <CardTitle>Quick demo</CardTitle>
-            <CardDescription>Basic components wired up.</CardDescription>
+            <CardDescription>Basic components wired up with authentication.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 sm:flex-row">
             <Input placeholder="Type something..." className="sm:max-w-xs" />
@@ -25,7 +25,7 @@ export default function Home() {
             <Button variant="secondary">Secondary</Button>
             <Button variant="outline">Outline</Button>
             <Button asChild>
-              <Link href="/auth/login">Go to Login</Link>
+              <Link href="/auth/signin">Go to Sign In</Link>
             </Button>
           </CardContent>
         </Card>
