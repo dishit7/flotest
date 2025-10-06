@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import {
   IconCamera,
@@ -34,6 +32,8 @@ import {
 } from "@/components/ui/sidebar"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
+import { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
+import Link from 'next/link'
 
 const data = {
   navMain: [
@@ -148,7 +148,7 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = useState<{ user_metadata?:{ full_name?: string; name?: string; avatar_url?: string; picture?: string }; email?: string } | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       console.log("AppSidebar auth state changed:", session?.user)
       setUser(session?.user ?? null)
     })
@@ -184,10 +184,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <Link href="/">
                 <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">flobase</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

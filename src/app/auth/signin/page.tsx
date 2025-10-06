@@ -30,9 +30,11 @@ export default function SignInPage() {
       })
 
       if (error) {
+        console.error('Google OAuth Error:', error.message)
         setError(error.message)
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error:', err)
       setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
@@ -50,11 +52,13 @@ export default function SignInPage() {
       })
 
       if (error) {
+        console.error('Password Auth Error:', error.message)
         setError(error.message)
       } else {
         router.push('/dashboard')
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error:', err)
       setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
@@ -64,12 +68,12 @@ export default function SignInPage() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <Link href="/" className="flex items-center gap-2 self-center font-medium">
-          <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-4" />
-          </div>
-          flobase
-        </Link>
+         <Link href="/" className="flex items-center gap-2 self-center font-medium">
+           <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+             <GalleryVerticalEnd className="size-4" />
+           </div>
+           flobase
+         </Link>
         
         <Card>
           <CardHeader className="text-center">

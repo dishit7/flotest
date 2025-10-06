@@ -30,9 +30,11 @@ export default function SignUpPage() {
       })
 
       if (error) {
+        console.error('Google OAuth Error:', error.message)
         setError(error.message)
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error:', err)
       setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
@@ -53,12 +55,14 @@ export default function SignUpPage() {
       })
 
       if (error) {
+        console.error('Email Signup Error:', error.message)
         setError(error.message)
       } else {
-          // Show success message
+        // Show success message
         router.push('/auth/verify-email')
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error:', err)
       setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)

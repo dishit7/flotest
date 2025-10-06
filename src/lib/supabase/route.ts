@@ -13,19 +13,35 @@ export async function createClient(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
+        get(name) {
+          return request.cookies.get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+        set(name, value, options) {
+         
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           })
-          cookiesToSet.forEach(({ name, value }) =>
-            response.cookies.set(name, value)
-          )
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name) {
+          request.cookies.delete(name)
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.delete(name)
         },
       },
     }
