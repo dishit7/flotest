@@ -9,7 +9,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 export function SiteHeader() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ email?: string } | null>(null)
   const router = useRouter()
   const supabase = createClient()
 

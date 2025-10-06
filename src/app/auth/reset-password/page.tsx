@@ -7,7 +7,8 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { GalleryVerticalEnd } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -15,7 +16,6 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isValidSession, setIsValidSession] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
   useEffect(() => {
@@ -63,12 +63,12 @@ export default function ResetPasswordPage() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <a href="/" className="flex items-center gap-2 self-center font-medium">
+        <Link href="/" className="flex items-center gap-2 self-center font-medium">
           <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
             <GalleryVerticalEnd className="size-4" />
           </div>
           flobase
-        </a>
+        </Link>
         
         <Card>
           <CardHeader className="text-center">

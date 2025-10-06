@@ -148,7 +148,7 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ user_metadata?:{ full_name?: string; name?: string; avatar_url?: string; picture?: string }; email?: string } | null>(null)
   const supabase = createClient()
 
   useEffect(() => {

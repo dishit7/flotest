@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { GalleryVerticalEnd } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -40,18 +41,18 @@ export default function ForgotPasswordPage() {
     return (
       <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
         <div className="flex w-full max-w-sm flex-col gap-6">
-          <a href="/" className="flex items-center gap-2 self-center font-medium">
+          <Link href="/" className="flex items-center gap-2 self-center font-medium">
             <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
               <GalleryVerticalEnd className="size-4" />
             </div>
             flobase
-          </a>
+          </Link>
           
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-xl">Check your email</CardTitle>
               <CardDescription>
-                We've sent a password reset link to {email}
+                We&apos;ve sent a password reset link to {email}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -72,18 +73,18 @@ export default function ForgotPasswordPage() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <a href="/" className="flex items-center gap-2 self-center font-medium">
+        <Link href="/" className="flex items-center gap-2 self-center font-medium">
           <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
             <GalleryVerticalEnd className="size-4" />
           </div>
           flobase
-        </a>
+        </Link>
         
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-xl">Forgot your password?</CardTitle>
             <CardDescription>
-              Enter your email address and we'll send you a link to reset your password
+              Enter your email address and we&apos;ll send you a link to reset your password
             </CardDescription>
           </CardHeader>
           <CardContent>
