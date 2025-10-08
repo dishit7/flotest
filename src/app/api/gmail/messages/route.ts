@@ -23,6 +23,7 @@ interface GmailMessageDetail {
         data?: string
         size: number
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       parts?: any[]
     }>
     mimeType: string
@@ -115,6 +116,7 @@ export async function GET(request: Request) {
       let htmlBody = ''
       let textBody = ''
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const findBodyParts = (parts: any[]): void => {
         for (const part of parts) {
           if (part.mimeType === 'text/html' && part.body?.data) {

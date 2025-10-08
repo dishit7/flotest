@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
-import { Mail, RefreshCw, AlertCircle, Inbox, X, Send } from 'lucide-react'
+import { Mail, RefreshCw, AlertCircle, Inbox, Send } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 
@@ -121,6 +121,7 @@ export default function EmailListPage() {
 
   useEffect(() => {
     fetchEmails()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleRefresh = () => {
@@ -293,7 +294,7 @@ export default function EmailListPage() {
                       <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                         <li>Go to your Supabase Dashboard</li>
                         <li>Navigate to Authentication → Settings</li>
-                        <li>Enable "Return provider tokens"</li>
+                        <li>Enable &quot;Return provider tokens&quot;</li>
                         <li>Sign out and sign in again with Google</li>
                       </ol>
                     </div>
@@ -326,7 +327,7 @@ export default function EmailListPage() {
                 <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No messages found</h3>
                 <p className="text-muted-foreground">
-                  Your inbox appears to be empty or we couldn't fetch your messages.
+                  Your inbox appears to be empty or we couldn&apos;t fetch your messages.
                 </p>
               </div>
             ) : (
@@ -498,7 +499,7 @@ export default function EmailListPage() {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Press Enter to send • To: {extractEmailAddress(selectedEmail.from)}
+                        Press Enter to send &bull; To: {extractEmailAddress(selectedEmail.from)}
                       </p>
                     </div>
                   </div>
