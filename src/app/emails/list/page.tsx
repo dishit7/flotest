@@ -11,8 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Mail, RefreshCw, AlertCircle, Inbox, Send } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
-
-type EmailCategory = 'IMPORTANT' | 'OPPORTUNITY' | 'SALES' | 'PERSONAL' | 'INFORMATIONAL' | 'SPAM'
+import { type EmailCategory } from '@/lib/email-categories'
 
 interface Email {
   id: string
@@ -32,12 +31,14 @@ interface Email {
 }
 
 const CATEGORY_CONFIG = {
-  IMPORTANT: { label: 'Important', variant: 'destructive' as const },
-  OPPORTUNITY: { label: 'New Opportunity', variant: 'default' as const },
-  SALES: { label: 'Sales & Marketing', variant: 'secondary' as const },
-  PERSONAL: { label: 'Personal', variant: 'outline' as const },
-  INFORMATIONAL: { label: 'Informational', variant: 'secondary' as const },
-  SPAM: { label: 'Low Priority', variant: 'outline' as const },
+  TO_RESPOND: { label: '1: to respond', variant: 'destructive' as const },
+  FYI: { label: '2: FYI', variant: 'secondary' as const },
+  COMMENT: { label: '3: comment', variant: 'outline' as const },
+  NOTIFICATION: { label: '4: notification', variant: 'secondary' as const },
+  MEETING_UPDATE: { label: '5: meeting update', variant: 'default' as const },
+  AWAITING_REPLY: { label: '6: awaiting reply', variant: 'outline' as const },
+  ACTIONED: { label: '7: actioned', variant: 'outline' as const },
+  MARKETING: { label: '8: marketing', variant: 'secondary' as const },
 }
 
 export default function EmailListPage() {
@@ -77,7 +78,7 @@ export default function EmailListPage() {
       const { categories } = await response.json()
       return emailsToCategor.map(email => ({
         ...email,
-        aiCategory: categories[email.id] || 'INFORMATIONAL'
+        aiCategory: categories[email.id] || 'FYI'
       }))
     } catch (err) {
       console.error('Error categorizing emails:', err)

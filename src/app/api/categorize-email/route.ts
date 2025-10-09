@@ -49,9 +49,9 @@ Analyze these emails and respond ONLY with a JSON object mapping email IDs to ca
 
 Example response format:
 {
-  "email-id-1": "IMPORTANT",
-  "email-id-2": "SALES",
-  "email-id-3": "PERSONAL"
+  "email-id-1": "TO_RESPOND",
+  "email-id-2": "MARKETING",
+  "email-id-3": "FYI"
 }
 
 Emails to categorize:
@@ -77,7 +77,7 @@ Return ONLY the JSON object, no other text.`
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError)
       categories = emails.reduce((acc, email) => {
-        acc[email.id] = 'INFORMATIONAL'
+        acc[email.id] = 'FYI'
         return acc
       }, {} as Record<string, EmailCategory>)
     }

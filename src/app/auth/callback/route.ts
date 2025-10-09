@@ -33,12 +33,25 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.session) {
+      if (data.session.provider_token) {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
+        fetch(`${baseUrl}/api/gmail/auto-label`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            providerToken: data.session.provider_token
+          })
+        }).catch(err => {
+          console.error('Background auto-label failed:', err)
+        })
+      }
       return response
     }
   }
 
-  // Return the user to an error page with instructions
   return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
 }

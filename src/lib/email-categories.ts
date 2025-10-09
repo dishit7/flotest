@@ -1,33 +1,51 @@
 export const EMAIL_CATEGORIES = {
-  IMPORTANT: {
-    label: 'Important',
+  TO_RESPOND: {
+    label: '1: to respond',
     color: 'red',
-    description: 'Critical emails requiring immediate attention, urgent matters, deadlines'
+    gmailColor: { backgroundColor: '#fb4c2f', textColor: '#ffffff' },
+    description: 'Emails requiring your response or action'
   },
-  OPPORTUNITY: {
-    label: 'New Opportunity',
-    color: 'green',
-    description: 'Business opportunities, potential deals, partnership proposals, job offers'
+  FYI: {
+    label: '2: FYI',
+    color: 'orange',
+    gmailColor: { backgroundColor: '#f691b2', textColor: '#ffffff' },
+    description: 'Informational emails for your awareness, no action needed'
   },
-  SALES: {
-    label: 'Sales & Marketing',
-    color: 'blue',
-    description: 'Sales pitches, marketing emails, promotional content, newsletters'
-  },
-  PERSONAL: {
-    label: 'Personal',
-    color: 'purple',
-    description: 'Personal communications, family, friends, casual conversations'
-  },
-  INFORMATIONAL: {
-    label: 'Informational',
+  COMMENT: {
+    label: '3: comment',
     color: 'yellow',
-    description: 'Updates, notifications, receipts, confirmations, general information'
+    gmailColor: { backgroundColor: '#fad165', textColor: '#000000' },
+    description: 'Emails with comments, feedback, or discussion threads'
   },
-  SPAM: {
-    label: 'Low Priority',
+  NOTIFICATION: {
+    label: '4: notification',
+    color: 'green',
+    gmailColor: { backgroundColor: '#16a765', textColor: '#ffffff' },
+    description: 'System notifications, automated alerts, updates'
+  },
+  MEETING_UPDATE: {
+    label: '5: meeting update',
+    color: 'blue',
+    gmailColor: { backgroundColor: '#4a86e8', textColor: '#ffffff' },
+    description: 'Meeting invitations, calendar updates, schedule changes'
+  },
+  AWAITING_REPLY: {
+    label: '6: awaiting reply',
+    color: 'purple',
+    gmailColor: { backgroundColor: '#a479e2', textColor: '#ffffff' },
+    description: 'Emails where you are waiting for a response from others'
+  },
+  ACTIONED: {
+    label: '7: actioned',
+    color: 'purple',
+    gmailColor: { backgroundColor: '#b99aff', textColor: '#000000' },
+    description: 'Emails that have been completed or resolved'
+  },
+  MARKETING: {
+    label: '8: marketing',
     color: 'gray',
-    description: 'Spam, unwanted emails, automated messages, low-value content'
+    gmailColor: { backgroundColor: '#8e8e8e', textColor: '#ffffff' },
+    description: 'Marketing emails, promotional content, newsletters'
   }
 } as const
 
