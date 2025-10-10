@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Sparkles, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
+import { Mail, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,6 +22,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
 
   useEffect(() => {
     fetchEmailCounts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchEmailCounts = async () => {
@@ -38,7 +39,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       const emails = data.emails || []
 
       // Count emails that have TO_RESPOND in their labels
-      const toRespond = emails.filter((email: any) => 
+      const toRespond = emails.filter((email: { labels?: string[] }) => 
         email.labels?.some((label: string) => label.includes('to respond') || label.includes('1:'))
       )
 
@@ -66,7 +67,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       const data = await response.json()
       const emails = data.emails || []
 
-      const toRespondEmails = emails.filter((email: any) => 
+      const toRespondEmails = emails.filter((email: { labels?: string[] }) => 
         email.labels?.some((label: string) => label.includes('to respond') || label.includes('1:'))
       )
 
@@ -80,7 +81,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          emails: toRespondEmails.map((e: any) => ({
+          emails: toRespondEmails.map((e: { id: string; from: string; subject: string; snippet: string; body: string }) => ({
             id: e.id,
             from: e.from,
             subject: e.subject,
@@ -106,7 +107,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       const total = Object.keys(drafts).length
 
       for (const [emailId, draftBody] of Object.entries(drafts)) {
-        const email = toRespondEmails.find((e: any) => e.id === emailId)
+        const email = toRespondEmails.find((e: { id: string }) => e.id === emailId)
         if (!email || !draftBody) continue
 
         try {

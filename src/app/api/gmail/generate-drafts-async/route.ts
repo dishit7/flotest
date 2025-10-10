@@ -44,8 +44,8 @@ export async function POST(request: Request) {
           return {
             id: detail.id,
             threadId: detail.threadId,
-            from: headers.find((h: any) => h.name.toLowerCase() === 'from')?.value,
-            subject: headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value,
+            from: headers.find((h: { name: string; value: string }) => h.name.toLowerCase() === 'from')?.value,
+            subject: headers.find((h: { name: string; value: string }) => h.name.toLowerCase() === 'subject')?.value,
             snippet: detail.snippet
           }
         })
@@ -88,7 +88,7 @@ Return ONLY the draft reply text.`
               .replace(/\//g, '_')
               .replace(/=+$/, '')
 
-            const draftPayload: any = { message: { raw: encodedEmail } }
+            const draftPayload: { message: { raw: string; threadId?: string } } = { message: { raw: encodedEmail } }
             if (email.threadId) draftPayload.message.threadId = email.threadId
 
             const draftResponse = await fetch(

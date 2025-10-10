@@ -7,14 +7,9 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { createClient } from "@/lib/supabase/client"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
 import Link from "next/link"
-
-import data from "./data.json"
 
 export default function Page() {
   return (

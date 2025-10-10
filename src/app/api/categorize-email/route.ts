@@ -177,7 +177,7 @@ Return ONLY the draft reply text, no other commentary.`
                   .replace(/\//g, '_')
                   .replace(/=+$/, '')
 
-                const draftPayload: any = {
+                const draftPayload: { message: { raw: string; threadId?: string } } = {
                   message: { raw: encodedEmail }
                 }
 
