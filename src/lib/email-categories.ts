@@ -44,7 +44,7 @@ export const EMAIL_CATEGORIES = {
   MARKETING: {
     label: '8: marketing',
     color: 'gray',
-    gmailColor: { backgroundColor: '#8e8e8e', textColor: '#ffffff' },
+    gmailColor: { backgroundColor: '#cca6ac', textColor: '#ffffff' },
     description: 'Marketing emails, promotional content, newsletters'
   }
 } as const
