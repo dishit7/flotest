@@ -120,3 +120,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Email body styles */
+.email-body {
+  @apply text-sm leading-relaxed;
+}
+
+.email-body img {
+  @apply max-w-full h-auto rounded-md;
+}
+
+.email-body a {
+  @apply text-primary underline hover:no-underline;
+}
+
+.email-body p {
+  @apply mb-4;
+}
+
+.email-body table {
+  @apply border-collapse w-full;
+}
+
+.email-body td,
+.email-body th {
+  @apply border border-border p-2;
+}
+
+.email-body blockquote {
+  @apply border-l-4 border-muted pl-4 italic my-4;
+}
+
+.email-body pre {
+  @apply bg-muted p-4 rounded-md overflow-x-auto;
+}
+
+.email-body code {
+  @apply bg-muted px-1 py-0.5 rounded text-xs;
+}
