@@ -57,6 +57,13 @@ export default function EmailListPage() {
   const categorizeEmails = async (emailsToCategor: Email[]) => {
     try {
       setCategorizing(true)
+      console.log(' Starting email categorization for', emailsToCategor.length, 'emails')
+      
+ 
+      emailsToCategor.forEach((email, i) => {
+        console.log(`Email ${i + 1}: ${email.subject} - Body length: ${email.body?.text?.length || 0} chars`)
+      })
+      
       const response = await fetch('/api/categorize-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,16 +73,30 @@ export default function EmailListPage() {
             from: e.from,
             subject: e.subject,
             snippet: e.snippet,
+            body: e.body,
           }))
         })
       })
 
       if (!response.ok) {
-        console.error('Failed to categorize emails')
+        const errorData = await response.json()
+        console.error(' Failed to categorize emails:', errorData)
         return emailsToCategor
       }
 
-      const { categories } = await response.json()
+      const { categories, drafts } = await response.json()
+      
+      console.log(' Categorization results:', Object.keys(categories).length, 'categories')
+      console.log(' Draft generation results:', Object.keys(drafts || {}).length, 'drafts')
+      
+      // Create Gmail drafts for TO_RESPOND emails
+      if (drafts && Object.keys(drafts).length > 0) {
+        console.log(' Creating Gmail drafts...')
+        await createGmailDrafts(emailsToCategor, drafts)
+      } else {
+        console.log(' No drafts to create')
+      }
+
       return emailsToCategor.map(email => ({
         ...email,
         aiCategory: categories[email.id] || 'FYI'
@@ -85,6 +106,58 @@ export default function EmailListPage() {
       return emailsToCategor
     } finally {
       setCategorizing(false)
+    }
+  }
+
+  const createGmailDrafts = async (emailsList: Email[], drafts: Record<string, string>) => {
+    try {
+      console.log(' reating Gmail drafts for TO_RESPOND emails...')
+      console.log(' Emails to draft:', Object.keys(drafts).length)
+      
+      const draftPromises = Object.entries(drafts).map(async ([emailId, draftBody]) => {
+        const email = emailsList.find(e => e.id === emailId)
+        if (!email || !draftBody) return
+
+        console.log(`\n Drafting reply for email: ${emailId}`)
+        console.log('From:', email.from)
+        console.log('Subject:', email.subject)
+        console.log('Generated Draft:', draftBody.substring(0, 100) + '...')
+
+        try {
+          const response = await fetch('/api/gmail/create-draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: extractEmailAddress(email.from),
+              subject: email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`,
+              body: draftBody,
+              threadId: email.threadId,
+            })
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            console.log(` Draft created successfully!`)
+            console.log('Gmail Draft ID:', data.draftId)
+            console.log('Thread ID:', data.threadId)
+          } else {
+            const errorData = await response.json()
+            console.error(` Failed to create draft for email ${emailId}:`, errorData)
+          }
+        } catch (error) {
+          console.error(` Error creating draft for email ${emailId}:`, error)
+        }
+      })
+
+      await Promise.all(draftPromises)
+      console.log(`\n Successfully created ${Object.keys(drafts).length} draft(s) in Gmail!`)
+      console.log('Check your Gmail Drafts folder to see them.')
+      
+      toast.success('AI drafts created', {
+        description: `Created ${Object.keys(drafts).length} draft reply${Object.keys(drafts).length > 1 ? 's' : ''} in Gmail`
+      })
+    } catch (error) {
+      console.error(' Error creating Gmail drafts:', error)
     }
   }
 

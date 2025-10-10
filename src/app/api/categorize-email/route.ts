@@ -10,6 +10,10 @@ interface CategorizeRequest {
     from: string
     subject: string
     snippet: string
+    body?: {
+      text: string
+      html: string
+    }
   }>
 }
 
@@ -82,7 +86,64 @@ Return ONLY the JSON object, no other text.`
       }, {} as Record<string, EmailCategory>)
     }
 
-    return NextResponse.json({ categories })
+    // Generate draft replies for TO_RESPOND emails
+    const drafts: Record<string, string> = {}
+    const toRespondEmails = emails.filter(email => categories[email.id] === 'TO_RESPOND')
+
+    console.log(`🤖 Found ${toRespondEmails.length} emails categorized as TO_RESPOND`)
+
+    if (toRespondEmails.length > 0) {
+      console.log('📝 Generating AI draft replies...')
+      
+      // Generate drafts for each TO_RESPOND email
+      const draftPromises = toRespondEmails.map(async (email) => {
+        try {
+          const emailContent = email.body?.text || email.body?.html || email.snippet
+          
+          console.log(`\n🎯 Generating draft for: ${email.from} - "${email.subject}"`)
+          
+          const draftPrompt = `You are an email assistant. Generate a professional, concise, and helpful reply to the following email.
+
+From: ${email.from}
+Subject: ${email.subject}
+Content:
+${emailContent}
+
+Write a professional reply that:
+1. Addresses the main points or questions
+2. Is polite and concise
+3. Uses appropriate tone
+4. Ends with a proper signature line (just use "Best regards," without a name)
+
+Return ONLY the draft reply text, no other commentary.`
+
+          const { text: draftText } = await generateText({
+            model: google('gemini-2.5-flash'),
+            prompt: draftPrompt,
+            temperature: 0.7,
+          })
+
+          const draft = draftText.trim()
+          console.log(`✅ Generated draft (${draft.length} chars):`, draft.substring(0, 150) + '...')
+          
+          return { id: email.id, draft }
+        } catch (error) {
+          console.error(`❌ Failed to generate draft for email ${email.id}:`, error)
+          return { id: email.id, draft: '' }
+        }
+      })
+
+      const draftResults = await Promise.all(draftPromises)
+      draftResults.forEach(({ id, draft }) => {
+        if (draft) {
+          drafts[id] = draft
+        }
+      })
+      
+      console.log(`🎉 Generated ${Object.keys(drafts).length} draft(s) successfully!`)
+    }
+
+    return NextResponse.json({ categories, drafts })
 
   } catch (error) {
     console.error('Error categorizing emails:', error)
