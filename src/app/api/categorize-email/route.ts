@@ -10,6 +10,7 @@ interface CategorizeRequest {
     from: string
     subject: string
     snippet: string
+    threadId?: string
     body?: {
       text: string
       html: string
@@ -90,17 +91,17 @@ Return ONLY the JSON object, no other text.`
     const drafts: Record<string, string> = {}
     const toRespondEmails = emails.filter(email => categories[email.id] === 'TO_RESPOND')
 
-    console.log(`🤖 Found ${toRespondEmails.length} emails categorized as TO_RESPOND`)
+    console.log(`Found ${toRespondEmails.length} emails categorized as TO_RESPOND`)
 
     if (toRespondEmails.length > 0) {
-      console.log('📝 Generating AI draft replies...')
+      console.log('Generating AI draft replies...')
       
       // Generate drafts for each TO_RESPOND email
       const draftPromises = toRespondEmails.map(async (email) => {
         try {
           const emailContent = email.body?.text || email.body?.html || email.snippet
           
-          console.log(`\n🎯 Generating draft for: ${email.from} - "${email.subject}"`)
+          console.log(`\nGenerating draft for: ${email.from} - "${email.subject}"`)
           
           const draftPrompt = `You are an email assistant. Generate a professional, concise, and helpful reply to the following email.
 
@@ -124,11 +125,11 @@ Return ONLY the draft reply text, no other commentary.`
           })
 
           const draft = draftText.trim()
-          console.log(`✅ Generated draft (${draft.length} chars):`, draft.substring(0, 150) + '...')
+          console.log(`Generated draft (${draft.length} chars):`, draft.substring(0, 150) + '...')
           
           return { id: email.id, draft }
         } catch (error) {
-          console.error(`❌ Failed to generate draft for email ${email.id}:`, error)
+          console.error(`Failed to generate draft for email ${email.id}:`, error)
           return { id: email.id, draft: '' }
         }
       })
@@ -140,7 +141,83 @@ Return ONLY the draft reply text, no other commentary.`
         }
       })
       
-      console.log(`🎉 Generated ${Object.keys(drafts).length} draft(s) successfully!`)
+      console.log(`Generated ${Object.keys(drafts).length} draft(s) successfully!`)
+      
+      // Create Gmail drafts for TO_RESPOND emails
+      if (Object.keys(drafts).length > 0) {
+        console.log('Creating Gmail drafts...')
+        const providerToken = session.provider_token
+        
+        if (providerToken) {
+          const draftCreationResults = await Promise.all(
+            Object.entries(drafts).map(async ([emailId, draftBody]) => {
+              const email = toRespondEmails.find(e => e.id === emailId)
+              if (!email || !draftBody) return { emailId, success: false }
+
+              try {
+                const toEmail = extractEmailAddress(email.from)
+                const subject = email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`
+                
+                console.log(`Creating draft for: ${email.subject}`)
+                
+                // Build email
+                const emailLines = [
+                  `To: ${toEmail}`,
+                  `Subject: ${subject}`,
+                  'MIME-Version: 1.0',
+                  'Content-Type: text/plain; charset=utf-8',
+                  '',
+                  draftBody
+                ]
+
+                const emailContent = emailLines.join('\r\n')
+                const encodedEmail = Buffer.from(emailContent)
+                  .toString('base64')
+                  .replace(/\+/g, '-')
+                  .replace(/\//g, '_')
+                  .replace(/=+$/, '')
+
+                const draftPayload: any = {
+                  message: { raw: encodedEmail }
+                }
+
+                // Get threadId if available
+                if (email.threadId) {
+                  draftPayload.message.threadId = email.threadId
+                }
+
+                const draftResponse = await fetch(
+                  'https://www.googleapis.com/gmail/v1/users/me/drafts',
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${providerToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(draftPayload)
+                  }
+                )
+
+                if (draftResponse.ok) {
+                  const draft = await draftResponse.json()
+                  console.log(`Draft created successfully! Draft ID: ${draft.id}`)
+                  return { emailId, success: true, draftId: draft.id }
+                } else {
+                  const error = await draftResponse.json()
+                  console.error(`Failed to create draft for ${emailId}:`, error)
+                  return { emailId, success: false, error }
+                }
+              } catch (error) {
+                console.error(`Error creating draft for ${emailId}:`, error)
+                return { emailId, success: false, error }
+              }
+            })
+          )
+
+          const successCount = draftCreationResults.filter(r => r.success).length
+          console.log(`Created ${successCount}/${Object.keys(drafts).length} draft(s) in Gmail`)
+        }
+      }
     }
 
     return NextResponse.json({ categories, drafts })
@@ -157,3 +234,8 @@ Return ONLY the draft reply text, no other commentary.`
   }
 }
 
+// Helper function to extract email address from "Name <email>" format
+function extractEmailAddress(from: string): string {
+  const match = from.match(/<(.+?)>/)
+  return match ? match[1] : from
+}

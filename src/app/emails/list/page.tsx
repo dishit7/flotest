@@ -73,6 +73,7 @@ export default function EmailListPage() {
             from: e.from,
             subject: e.subject,
             snippet: e.snippet,
+            threadId: e.threadId,
             body: e.body,
           }))
         })
@@ -84,18 +85,13 @@ export default function EmailListPage() {
         return emailsToCategor
       }
 
-      const { categories, drafts } = await response.json()
+      const { categories } = await response.json()
       
       console.log(' Categorization results:', Object.keys(categories).length, 'categories')
-      console.log(' Draft generation results:', Object.keys(drafts || {}).length, 'drafts')
       
-      // Create Gmail drafts for TO_RESPOND emails
-      if (drafts && Object.keys(drafts).length > 0) {
-        console.log(' Creating Gmail drafts...')
-        await createGmailDrafts(emailsToCategor, drafts)
-      } else {
-        console.log(' No drafts to create')
-      }
+      // NOTE: Draft creation removed from here
+      // Use the dashboard "Generate AI Draft Replies" button instead
+      // This prevents duplicate draft creation on every page visit
 
       return emailsToCategor.map(email => ({
         ...email,
@@ -109,6 +105,8 @@ export default function EmailListPage() {
     }
   }
 
+  // Draft creation moved to dashboard - use "Generate AI Draft Replies" button
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const createGmailDrafts = async (emailsList: Email[], drafts: Record<string, string>) => {
     try {
       console.log(' reating Gmail drafts for TO_RESPOND emails...')

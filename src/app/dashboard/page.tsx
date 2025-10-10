@@ -1,9 +1,20 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DraftGenerationCard } from "@/components/draft-generation-card"
+import { SectionCards } from "@/components/section-cards"
+import { ChartAreaInteractive } from "@/components/chart-area-interactive"
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
+import { createClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+import { Settings } from "lucide-react"
+import Link from "next/link"
+
+import data from "./data.json"
 
 export default function Page() {
   return (
@@ -18,52 +29,26 @@ export default function Page() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="p-4 lg:p-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>connect your email</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Setup progress</span>
-                    <span>1/4</span>
-                  </div>
-                  <Progress value={25} />
-                </div>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
-                  <li>
-                    Connect your email provider
-                    <div className="mt-2 flex gap-3">
-                      <Button className="bg-white text-black hover:bg-gray-100 border border-gray-300">
-                        <img src="/gmail.svg" alt="Gmail" className="w-4 h-4 mr-2" />
-                        Gmail
-                      </Button>
-                      <Button className="bg-white text-black hover:bg-gray-100 border border-gray-300">
-                        <img src="/outlook.svg" alt="Outlook" className="w-4 h-4 mr-2" />
-                        Outlook
-                      </Button>
-                    </div>
-                  </li>
-                  <li>
-                    Connect your calendar
-                    <div className="mt-2 flex gap-3">
-                      <Button className="bg-white text-black hover:bg-gray-100 border border-gray-300">
-                        <img src="/google_calendar.svg" alt="Google Calendar" className="w-4 h-4 mr-2" />
-                        Google Calendar
-                      </Button>
-                      <Button className="bg-white text-black hover:bg-gray-100 border border-gray-300">
-                        <img src="/outlook.svg" alt="Outlook" className="w-4 h-4 mr-2" />
-                        Outlook
-                      </Button>
-                    </div>
-                  </li>
-                  <li>Start your free trial</li>
-                </ol>
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <div className="px-4 lg:px-6 flex justify-end">
+                <Link href="/dashboard/settings">
+                  <Button variant="outline" size="sm">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Button>
+                </Link>
               </div>
-            </CardContent>
-          </Card>
+              <div className="px-4 lg:px-6">
+                <DraftGenerationCard />
+              </div>
+              <SectionCards />
+              <div className="px-4 lg:px-6">
+                <ChartAreaInteractive />
+              </div>
+            </div>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

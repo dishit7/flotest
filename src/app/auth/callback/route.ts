@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -35,8 +36,21 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.session) {
-      if (data.session.provider_token) {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
+       if (data.session.provider_token) {
+        try {
+          await prisma.profile.update({
+            where: { id: data.session.user.id },
+            data: {
+              googleAccessToken: data.session.provider_token,
+              googleRefreshToken: data.session.provider_refresh_token || null,
+            }
+          })
+          console.log('Stored Google tokens in database')
+        } catch (dbError) {
+          console.error('Failed to store tokens:', dbError)
+        }
+
+         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
         fetch(`${baseUrl}/api/gmail/auto-label`, {
           method: 'POST',
           headers: {
