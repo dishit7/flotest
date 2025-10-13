@@ -29,20 +29,44 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
     try {
       setLoading(true)
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+      if (!session) {
+        console.log('No session found')
+        return
+      }
 
-      // Fetch emails with TO_RESPOND label
+      // First, get all labels to find the "to respond" label ID
+      const labelsResponse = await fetch('/api/gmail/labels')
+      if (!labelsResponse.ok) {
+        throw new Error('Failed to fetch labels')
+      }
+      
+      const labelsData = await labelsResponse.json()
+      const toRespondLabel = labelsData.toRespondLabel
+      
+      if (!toRespondLabel) {
+        console.log('No "to respond" label found')
+        setToRespondCount(0)
+        return
+      }
+      
+      console.log('Found "to respond" label:', toRespondLabel.name, 'ID:', toRespondLabel.id)
+
+       
       const response = await fetch('/api/gmail/messages?maxResults=100')
-      if (!response.ok) throw new Error('Failed to fetch emails')
+      if (!response.ok) {
+        throw new Error('Failed to fetch emails')
+      }
 
       const data = await response.json()
       const emails = data.emails || []
 
-      // Count emails that have TO_RESPOND in their labels
-      const toRespond = emails.filter((email: { labels?: string[] }) => 
-        email.labels?.some((label: string) => label.includes('to respond') || label.includes('1:'))
-      )
+      // Count emails that have the "to respond" label ID
+      const toRespond = emails.filter((email: { labels?: string[] }) => {
+        const labels = email.labels || []
+        return labels.includes(toRespondLabel.id)
+      })
 
+      console.log(`Found ${toRespond.length} emails with "to respond" label`)
       setToRespondCount(toRespond.length)
       
       // TODO: Check database for which emails already have drafts
@@ -155,6 +179,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
     return match ? match[1] : from
   }
 
+
   if (loading) {
     return (
       <Card>
@@ -168,35 +193,62 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
     )
   }
 
-  if (toRespondCount === 0) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-            <div>
-              <p className="text-sm font-medium">All caught up!</p>
-              <p className="text-sm text-muted-foreground">No emails need responses right now</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+  // Always show the welcome message and categories, even when no emails need responses
 
   return (
-    <Card className="border-blue-200 bg-blue-50/50">
+    <Card className="border-green-200 bg-green-50/50">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="mt-1">
-              <Mail className="h-5 w-5 text-blue-600" />
+              <Mail className="h-5 w-5 text-green-600" />
             </div>
-            <div>
-              <CardTitle className="text-lg">Emails Need Your Response</CardTitle>
-              <CardDescription className="mt-1">
-                You have <Badge variant="default" className="mx-1">{toRespondCount}</Badge> 
-                email{toRespondCount > 1 ? 's' : ''} waiting for a reply
+            <div className="flex-1">
+              <CardTitle className="text-xl">Welcome to flobase!</CardTitle>
+              <CardDescription className="mt-2 space-y-3">
+                <p>We've analyzed your emails and created <strong>8 smart categories</strong> to help you stay organized:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                    <span>1: To Respond</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-orange-400"></div>
+                    <span>2: FYI</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
+                    <span>3: Comment</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                    <span>4: Notification</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                    <span>5: Meeting Update</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-purple-500"></div>
+                    <span>6: Awaiting Reply</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-indigo-400"></div>
+                    <span>7: Actioned</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-gray-400"></div>
+                    <span>8: Marketing</span>
+                  </div>
+                </div>
+                {toRespondCount > 0 && (
+                  <div className="mt-3 p-3 bg-orange-50 rounded-md border border-orange-200">
+                    <p className="text-orange-800 font-medium">
+                      You have <Badge variant="destructive" className="mx-1">{toRespondCount}</Badge> 
+                      email{toRespondCount > 1 ? 's' : ''} in your "To Respond" category that need your attention
+                    </p>
+                  </div>
+                )}
               </CardDescription>
             </div>
           </div>
@@ -228,7 +280,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
 
           <Button
             onClick={generateDrafts}
-            disabled={generating}
+            disabled={generating || toRespondCount === 0}
             className="w-full sm:w-auto"
             size="lg"
           >
@@ -240,13 +292,16 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Generate AI Draft Replies
+                Generate Automatic Drafts
               </>
             )}
           </Button>
 
           <p className="text-xs text-muted-foreground">
-            AI will analyze each email and create personalized draft responses in your Gmail Drafts folder
+            {toRespondCount > 0 
+              ? `AI will analyze ${toRespondCount} email${toRespondCount > 1 ? 's' : ''} and create personalized draft responses in your Gmail Drafts folder`
+              : "No emails need responses right now - you're all caught up!"
+            }
           </p>
         </div>
       </CardContent>
