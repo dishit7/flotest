@@ -35,7 +35,7 @@ export async function GET() {
     
     return NextResponse.json({ 
       labels: labelsData.labels || [],
-      toRespondLabel: labelsData.labels?.find((l: any) => l.name.includes('to respond') || l.name.includes('1:'))
+      toRespondLabel: labelsData.labels?.find((l: { name: string }) => l.name.includes('to respond') || l.name.includes('1:'))
     })
 
   } catch (error) {

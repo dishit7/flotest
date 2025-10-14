@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, Save, Sparkles, X } from 'lucide-react'
+import { Loader2, Save, X } from 'lucide-react'
 
 interface DraftSettings {
   draftTone: 'professional' | 'friendly' | 'casual' | 'formal' | 'direct';
@@ -170,7 +170,7 @@ export default function DraftsSettingsPage() {
                 <Label htmlFor="draftTone">Draft Tone</Label>
                 <Select
                   value={settings.draftTone}
-                  onValueChange={(value) => updateSetting('draftTone', value as any)}
+                  onValueChange={(value) => updateSetting('draftTone', value as DraftSettings['draftTone'])}
                 >
                   <SelectTrigger id="draftTone">
                     <SelectValue />
@@ -193,7 +193,7 @@ export default function DraftsSettingsPage() {
                 <Label htmlFor="draftLength">Draft Length</Label>
                 <Select
                   value={settings.draftLength}
-                  onValueChange={(value) => updateSetting('draftLength', value as any)}
+                  onValueChange={(value) => updateSetting('draftLength', value as DraftSettings['draftLength'])}
                 >
                   <SelectTrigger id="draftLength">
                     <SelectValue />
@@ -214,7 +214,7 @@ export default function DraftsSettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="includeGreeting">Include Greeting</Label>
                   <p className="text-sm text-muted-foreground">
-                    Start emails with a greeting like "Hi" or "Hello"
+                    Start emails with a greeting like &quot;Hi&quot; or &quot;Hello&quot;
                   </p>
                 </div>
                 <Switch
@@ -229,7 +229,7 @@ export default function DraftsSettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="includeClosing">Include Closing</Label>
                   <p className="text-sm text-muted-foreground">
-                    End emails with a closing like "Best regards"
+                    End emails with a closing like &quot;Best regards&quot;
                   </p>
                 </div>
                 <Switch
@@ -287,7 +287,7 @@ export default function DraftsSettingsPage() {
                 <Label htmlFor="responseStyle">Response Style</Label>
                 <Select
                   value={settings.responseStyle || 'detailed'}
-                  onValueChange={(value) => updateSetting('responseStyle', value as any)}
+                  onValueChange={(value) => updateSetting('responseStyle', value as DraftSettings['responseStyle'])}
                 >
                   <SelectTrigger id="responseStyle">
                     <SelectValue />
@@ -414,7 +414,7 @@ export default function DraftsSettingsPage() {
                   </div>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Phrases you'd like the AI to use when appropriate
+                  Phrases you&apos;d like the AI to use when appropriate
                 </p>
               </div>
             </CardContent>

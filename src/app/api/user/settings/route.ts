@@ -27,7 +27,6 @@ export async function GET() {
   }
 }
 
-// UPDATE user settings
 export async function PUT(request: Request) {
   try {
     const supabase = await createClient()
@@ -38,14 +37,15 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { draftLanguage, draftTone, customInstructions } = body
 
-    const settings = await prisma.userSettings.update({
+    const settings = await prisma.userSettings.upsert({
       where: { userId: user.id },
-      data: {
-        draftLanguage,
-        draftTone,
-        customInstructions,
+      create: {
+        userId: user.id,
+        draftSettings: body as never
+      },
+      update: {
+        draftSettings: body as never
       }
     })
 

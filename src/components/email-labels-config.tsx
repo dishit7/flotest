@@ -293,7 +293,7 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
   
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">
-            We will organize your emails using the categories below to keep you focused on what's important.
+            We will organize your emails using the categories below to keep you focused on what&apos;s important.
         </h1>
         <div className="flex items-center space-x-2">
           <Switch
@@ -369,7 +369,7 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
           )
         })}
       </div>
-
+ 
       <div className="mt-6">
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>

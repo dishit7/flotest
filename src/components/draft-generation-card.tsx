@@ -206,7 +206,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
             <div className="flex-1">
               <CardTitle className="text-xl">Welcome to flobase!</CardTitle>
               <CardDescription className="mt-2 space-y-3">
-                <p>We've analyzed your emails and created <strong>8 smart categories</strong> to help you stay organized:</p>
+                <p>We&apos;ve analyzed your emails and created <strong>8 smart categories</strong> to help you stay organized:</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-red-500"></div>
@@ -245,7 +245,7 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
                   <div className="mt-3 p-3 bg-orange-50 rounded-md border border-orange-200">
                     <p className="text-orange-800 font-medium">
                       You have <Badge variant="destructive" className="mx-1">{toRespondCount}</Badge> 
-                      email{toRespondCount > 1 ? 's' : ''} in your "To Respond" category that need your attention
+                      email{toRespondCount > 1 ? 's' : ''} in your &quot;To Respond&quot; category that need your attention
                     </p>
                   </div>
                 )}

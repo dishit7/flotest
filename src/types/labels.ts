@@ -17,6 +17,3 @@ export interface CustomizationRules {
 
 export type LabelsRecord = Record<string, LabelConfig>
 export type CustomizationRecord = Record<string, CustomizationRules>
-
-
-

@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     const userSettings: DraftSettings = profile?.settings?.draftSettings 
-      ? { ...defaultSettings, ...(profile.settings.draftSettings as any) }
+      ? { ...defaultSettings, ...(profile.settings.draftSettings as Partial<DraftSettings>) }
       : defaultSettings
 
     console.log('📝 User Draft Settings:', JSON.stringify(userSettings, null, 2))
