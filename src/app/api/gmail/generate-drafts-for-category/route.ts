@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { EMAIL_CATEGORIES, type EmailCategory } from '@/lib/email-categories'
+import { prisma } from '@/lib/prisma'
+import type { DraftSettings } from '@/app/api/user/draft-settings/route'
 
 interface GenerateDraftsRequest {
   category?: string // Optional: default to 'TO_RESPOND'
@@ -21,6 +23,34 @@ export async function POST(request: Request) {
     if (!providerToken) {
       return NextResponse.json({ error: 'No Gmail access token' }, { status: 401 })
     }
+
+    // Fetch user's draft settings
+    const profile = await prisma.profile.findUnique({
+      where: { id: session.user.id },
+      select: { 
+        settings: {
+          select: { draftSettings: true }
+        }
+      }
+    })
+
+    const defaultSettings: DraftSettings = {
+      draftTone: 'professional',
+      draftLength: 'medium',
+      includeGreeting: true,
+      includeClosing: true,
+      formalityLevel: 3,
+      responseStyle: 'detailed',
+      useEmojis: false,
+      avoidWords: [],
+      preferredPhrases: [],
+    }
+
+    const userSettings: DraftSettings = profile?.settings?.draftSettings 
+      ? { ...defaultSettings, ...(profile.settings.draftSettings as any) }
+      : defaultSettings
+
+    console.log('📝 User Draft Settings:', JSON.stringify(userSettings, null, 2))
 
     const body: GenerateDraftsRequest = await request.json().catch(() => ({}))
     const categoryKey = body.category || 'TO_RESPOND'
@@ -131,21 +161,13 @@ export async function POST(request: Request) {
 
         console.log(`Generating draft for: ${from} - "${subject}"`)
 
-        // Generate AI draft reply
-        const draftPrompt = `You are an email assistant. Generate a professional, concise, and helpful reply to the following email.
-
-From: ${from}
-Subject: ${subject}
-Content:
-${emailBody.substring(0, 2000)}
-
-Write a professional reply that:
-1. Addresses the main points or questions
-2. Is polite and concise
-3. Uses appropriate tone
-4. Ends with a proper signature line (just use "Best regards," without a name)
-
-Return ONLY the draft reply text, no other commentary.`
+        // Generate AI draft reply using user settings
+        const draftPrompt = buildPromptWithSettings(from, subject, emailBody, userSettings)
+        
+        // Log the final prompt being sent to LLM
+        console.log('🤖 ===== FINAL PROMPT TO LLM =====')
+        console.log(draftPrompt)
+        console.log('🤖 ===== END OF PROMPT =====')
 
         const { text: draftText } = await generateText({
           model: google('gemini-2.5-flash'),
@@ -253,5 +275,109 @@ Return ONLY the draft reply text, no other commentary.`
 function extractEmailAddress(from: string): string {
   const match = from.match(/<(.+?)>/)
   return match ? match[1] : from
+}
+
+// Helper function to build prompt based on user settings
+function buildPromptWithSettings(
+  from: string,
+  subject: string,
+  emailBody: string,
+  settings: DraftSettings
+): string {
+  // Tone mapping
+  const toneDescriptions = {
+    professional: 'professional and business-appropriate',
+    friendly: 'warm and friendly',
+    casual: 'casual and conversational',
+    formal: 'formal and respectful',
+    direct: 'direct and to-the-point'
+  }
+
+  // Length mapping
+  const lengthDescriptions = {
+    short: '1-2 short paragraphs',
+    medium: '2-3 paragraphs',
+    long: '3-4 detailed paragraphs'
+  }
+
+  // Response style mapping
+  const styleDescriptions = {
+    direct: 'Get straight to the point without unnecessary pleasantries.',
+    empathetic: 'Show understanding and empathy for the sender\'s situation.',
+    detailed: 'Provide thorough explanations and comprehensive responses.'
+  }
+
+  // Build the base prompt
+  let prompt = `You are an email assistant. Generate a ${toneDescriptions[settings.draftTone]} reply to the following email.\n\n`
+  
+  prompt += `From: ${from}\n`
+  prompt += `Subject: ${subject}\n`
+  prompt += `Content:\n${emailBody.substring(0, 2000)}\n\n`
+  
+  prompt += `Write a ${toneDescriptions[settings.draftTone]} reply that:\n`
+  prompt += `1. Is approximately ${lengthDescriptions[settings.draftLength]} in length\n`
+  prompt += `2. Addresses the main points or questions\n`
+  
+  // Add greeting instruction
+  if (settings.includeGreeting) {
+    prompt += `3. Starts with an appropriate greeting\n`
+  } else {
+    prompt += `3. Skips the greeting and starts directly with the content\n`
+  }
+  
+  // Add closing instruction
+  if (settings.includeClosing) {
+    if (settings.signatureTemplate) {
+      prompt += `4. Ends with the following signature:\n${settings.signatureTemplate}\n`
+    } else {
+      prompt += `4. Ends with an appropriate closing (e.g., "Best regards,")\n`
+    }
+  } else {
+    prompt += `4. Skips the closing signature\n`
+  }
+
+  // Add response style
+  if (settings.responseStyle) {
+    prompt += `5. Style: ${styleDescriptions[settings.responseStyle]}\n`
+  }
+
+  // Add formality level
+  if (settings.formalityLevel !== undefined) {
+    const formalityDescriptions = [
+      '',
+      'very casual and relaxed',
+      'casual but respectful',
+      'neutral and balanced',
+      'formal and professional',
+      'very formal and ceremonious'
+    ]
+    prompt += `6. Use a ${formalityDescriptions[settings.formalityLevel]} tone\n`
+  }
+
+  // Add emoji instruction
+  if (settings.useEmojis) {
+    prompt += `7. Feel free to use emojis where appropriate\n`
+  } else {
+    prompt += `7. Do NOT use any emojis\n`
+  }
+
+  // Add custom instructions
+  if (settings.customInstructions) {
+    prompt += `\nAdditional Instructions:\n${settings.customInstructions}\n`
+  }
+
+  // Add words to avoid
+  if (settings.avoidWords && settings.avoidWords.length > 0) {
+    prompt += `\nAvoid using these words/phrases: ${settings.avoidWords.join(', ')}\n`
+  }
+
+  // Add preferred phrases
+  if (settings.preferredPhrases && settings.preferredPhrases.length > 0) {
+    prompt += `\nTry to use these phrases when appropriate: ${settings.preferredPhrases.join(', ')}\n`
+  }
+
+  prompt += `\nReturn ONLY the draft reply text, no other commentary.`
+
+  return prompt
 }
 
