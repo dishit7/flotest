@@ -80,9 +80,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch labels' }, { status: 500 })
     }
 
-    const labelsData = await labelsResponse.json()
+    const labelsData = await labelsResponse.json() as { labels?: Array<{ id: string; name: string }> }
     const categoryLabel = labelsData.labels?.find(
-      (label: any) => label.name === labelName
+      (label) => label.name === labelName
     )
 
     if (!categoryLabel) {
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     console.log(`Found ${messages.length} messages in ${categoryKey}`)
 
     // Fetch full email details for each message
-    const emailPromises = messages.map(async (message: any) => {
+    const emailPromises = messages.map(async (message: { id: string }) => {
       const emailResponse = await fetch(
         `https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
         {
@@ -135,17 +135,17 @@ export async function POST(request: Request) {
     const emails = await Promise.all(emailPromises)
 
     // Generate drafts for each email
-    const draftPromises = emails.map(async (email: any) => {
+    const draftPromises = emails.map(async (email: { id: string; threadId?: string; payload?: { headers?: Array<{ name: string; value: string }>; parts?: Array<{ mimeType: string; body?: { data?: string } }>; body?: { data?: string } }; snippet?: string }) => {
       try {
         const headers = email.payload?.headers || []
-        const from = headers.find((h: any) => h.name === 'From')?.value || ''
-        const subject = headers.find((h: any) => h.name === 'Subject')?.value || ''
+        const from = headers.find((h) => h.name === 'From')?.value || ''
+        const subject = headers.find((h) => h.name === 'Subject')?.value || ''
         const threadId = email.threadId
 
         // Extract email body
         let emailBody = ''
         if (email.payload?.parts) {
-          const textPart = email.payload.parts.find((part: any) => 
+          const textPart = email.payload.parts.find((part) => 
             part.mimeType === 'text/plain' || part.mimeType === 'text/html'
           )
           if (textPart?.body?.data) {

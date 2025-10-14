@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { EMAIL_CATEGORIES, type EmailCategory } from '@/lib/email-categories'
+import { prisma } from '@/lib/prisma'
 
 interface GmailLabel {
   id: string
@@ -27,22 +28,26 @@ interface GmailMessageDetail {
 export async function POST(request: Request) {
   try {
     let providerToken: string | undefined
+    let userId: string | undefined
+    
+    const supabase = await createClient()
     
     try {
       const body = await request.json()
       providerToken = body.providerToken
+      userId = body.userId
     } catch {
     }
 
-    if (!providerToken) {
-      const supabase = await createClient()
+    if (!userId || !providerToken) {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError || !session) {
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
       }
-
-      providerToken = session.provider_token || undefined
+      
+      if (!userId) userId = session.user.id
+      if (!providerToken) providerToken = session.provider_token || undefined
     }
     
     if (!providerToken) {
@@ -50,6 +55,7 @@ export async function POST(request: Request) {
     }
 
     const labelMap = new Map<EmailCategory, string>()
+    const labelsToStore: Record<string, { id: string; name: string; color: string; enabled: boolean; isCustom: boolean }> = {}
     
     const listLabelsResponse = await fetch(
       'https://www.googleapis.com/gmail/v1/users/me/labels',
@@ -72,7 +78,14 @@ export async function POST(request: Request) {
         
         if (existingLabel) {
           labelMap.set(key as EmailCategory, existingLabel.id)
-          console.log(`Found existing label: ${category.label} (ID: ${existingLabel.id})`)
+          
+          labelsToStore[key] = {
+            id: existingLabel.id,
+            name: category.label,
+            color: category.color,
+            enabled: true,
+            isCustom: false
+          }
         } else {
           const createLabelResponse = await fetch(
             'https://www.googleapis.com/gmail/v1/users/me/labels',
@@ -94,7 +107,14 @@ export async function POST(request: Request) {
           if (createLabelResponse.ok) {
             const labelData: GmailLabel = await createLabelResponse.json()
             labelMap.set(key as EmailCategory, labelData.id)
-            console.log(`Created label: ${category.label} (ID: ${labelData.id})`)
+            
+            labelsToStore[key] = {
+              id: labelData.id,
+              name: category.label,
+              color: category.color,
+              enabled: true,
+              isCustom: false
+            }
           } else {
             const errorData = await createLabelResponse.json()
             console.error(`Failed to create label ${category.label}:`, errorData)
@@ -105,7 +125,33 @@ export async function POST(request: Request) {
       }
     }
     
-    console.log(`Label map size: ${labelMap.size} out of ${Object.keys(EMAIL_CATEGORIES).length} categories`)
+    if (userId && Object.keys(labelsToStore).length > 0) {
+      try {
+        await prisma.profile.upsert({
+          where: { id: userId },
+          create: {
+            id: userId,
+            email: '',
+          },
+          update: {}
+        })
+
+        await prisma.userSettings.upsert({
+          where: { userId },
+          create: {
+            userId,
+            labels: labelsToStore
+          },
+          update: {
+            labels: labelsToStore
+          }
+        })
+        
+        console.log(`Saved ${Object.keys(labelsToStore).length} labels to database`)
+      } catch (dbError) {
+        console.error('Error saving labels to database:', dbError)
+      }
+    }
 
     const messagesResponse = await fetch(
       'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=100',

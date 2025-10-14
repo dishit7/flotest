@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            providerToken: data.session.provider_token
+            providerToken: data.session.provider_token,
+            userId: data.session.user.id
           })
         }).catch(err => {
           console.error('Background auto-label failed:', err)

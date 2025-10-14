@@ -97,14 +97,14 @@ export interface DraftSettings {
       await prisma.userSettings.update({
         where: { userId: user.id },
         data: { 
-          draftSettings: settings as any  
+          draftSettings: settings
         }
       })
     } else {
-      await prisma.userSettings.create({
+       await prisma.userSettings.create({
         data: {
           userId: user.id,
-          draftSettings: settings as any
+          draftSettings: settings
         }
       })
     }

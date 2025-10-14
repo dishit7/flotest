@@ -45,6 +45,9 @@ model UserSettings {
   
   draftSettings Json? @map("draft_settings")
    
+  labels Json? @map("labels")
+  labelCustomization Json? @map("label_customization")
+ 
    
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -93,55 +96,7 @@ model EmailMetadata {
   @@index([hasDraftGenerated])
   @@map("email_metadata")
 }
+  
  
-model SystemLabelTemplate {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  
-  key          String  @unique
-  defaultName  String  @map("default_name")
-  description  String?
-  defaultColor String  @map("default_color")
-  defaultIcon  String? @map("default_icon")
-  defaultRules Json    @map("default_rules")
-  isActive     Boolean @default(true) @map("is_active")
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
-  userLabels UserLabel[]
-  
-  @@map("system_label_templates")
-}
-
-model UserLabel {
-  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId String @map("user_id") @db.Uuid
-  
-  name         String
-  color        String
-  gmailLabelId String? @map("gmail_label_id")
-  
-  systemTemplateId      String? @map("system_template_id") @db.Uuid
-  isCustom              Boolean @default(true) @map("is_custom")
-  autoCategorizeEnabled Boolean @default(true) @map("auto_categorize_enabled")
-  categorizationRules   Json?   @map("categorization_rules")
-  
-  sortOrder Int     @default(0) @map("sort_order")
-  isActive  Boolean @default(true) @map("is_active")
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
-  systemTemplate SystemLabelTemplate? @relation(fields: [systemTemplateId], references: [id], onDelete: SetNull)
-   
-  @@unique([userId, name])
-  @@unique([userId, systemTemplateId])
-  @@index([userId, isActive])
-  @@index([systemTemplateId])
-  @@index([userId, sortOrder])
-  @@map("user_labels")
-}
-  
-
  
 
