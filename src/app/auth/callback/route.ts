@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { registerGmailWatch } from '@/lib/gmail-watch'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -37,17 +38,30 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.session) {
        if (data.session.provider_token) {
+        const userId = data.session.user.id
+        const providerToken = data.session.provider_token
+        const refreshToken = data.session.provider_refresh_token || undefined
+        
         try {
-          await prisma.profile.update({
-            where: { id: data.session.user.id },
+           console.log('Registering Gmail watch for user:', data.session.user.email)
+          const watchResponse = await registerGmailWatch({
+            accessToken: providerToken,
+            refreshToken,
+            userId
+          })
+          
+           await prisma.profile.update({
+            where: { id: userId },
             data: {
-              googleAccessToken: data.session.provider_token,
-              googleRefreshToken: data.session.provider_refresh_token || null,
+              googleAccessToken: providerToken,
+              googleRefreshToken: refreshToken || null,
+              gmailHistoryId: watchResponse.historyId,
             }
           })
-          console.log('Stored Google tokens in database')
+          console.log('Stored Google tokens and historyId in database')
+          console.log('Gmail watch expires:', new Date(parseInt(watchResponse.expiration)).toISOString())
         } catch (dbError) {
-          console.error('Failed to store tokens:', dbError)
+          console.error('Failed to store tokens or register watch:', dbError)
         }
 
          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
@@ -57,8 +71,8 @@ export async function GET(request: NextRequest) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            providerToken: data.session.provider_token,
-            userId: data.session.user.id
+            providerToken: providerToken,
+            userId: userId
           })
         }).catch(err => {
           console.error('Background auto-label failed:', err)
