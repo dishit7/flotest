@@ -45,11 +45,7 @@ export async function updateSession(request: NextRequest) {
   
   const authRoutes = [
     '/auth/signin',
-    '/auth/signup', 
-    '/auth/forgot-password',
-    '/auth/reset-password',
-    '/auth/verify-email',
-    '/auth/auth-code-error',
+    '/auth/signup',
   ]
 
   const protectedRoutes = ['/dashboard', '/emails', '/tags']
