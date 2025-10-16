@@ -38,12 +38,12 @@ const navItems = [
   },
   {
     title: "Categorization",
-    url: "/tags",
+    url: "/dashboard/tags",
     icon: IconTags,
   },
   {
     title: "Drafts",
-    url: "/emails/list",
+    url: "/dashboard/drafts",
     icon: IconMail,
   },
   {
