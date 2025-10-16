@@ -44,14 +44,12 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = ['/', '/api/_next/static', '/api/_next/image']
   
   const authRoutes = [
-    '/signin',
-    '/signup', 
-    '/forgot-password',
-    '/reset-password',
-    '/verify-email',
-    '/auth-code-error',
-    '/login', // Keep for backwards compatibility
-    '/auth/callback', // OAuth callback
+    '/auth/signin',
+    '/auth/signup', 
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/verify-email',
+    '/auth/auth-code-error',
   ]
 
   const protectedRoutes = ['/dashboard', '/emails', '/tags']
@@ -60,16 +58,19 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => pathname === route)
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const isOAuthCallback = pathname === '/auth/callback'
 
   // Redirect unauthenticated users from protected routes to signin
   if (!user && isProtectedRoute) {
+    console.log(`[MIDDLEWARE] Redirecting unauthenticated user from ${pathname} -> /auth/signin`)
     const url = request.nextUrl.clone()
-    url.pathname = '/signin'
+    url.pathname = '/auth/signin'
     return NextResponse.redirect(url)
   }
 
   // Redirect authenticated users away from auth pages to dashboard
-  if (user && isAuthRoute && pathname !== '/auth/callback') {
+  if (user && isAuthRoute && !isOAuthCallback) {
+    console.log(`[MIDDLEWARE] Redirecting authenticated user from ${pathname} -> /dashboard`)
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
