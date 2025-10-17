@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { EMAIL_CATEGORIES } from '@/lib/email-categories'
+import { getValidGoogleToken } from '@/lib/refresh-google-token'
 
 interface PubSubMessage {
   message: {
@@ -26,13 +27,11 @@ export async function POST(request: Request) {
     
      const { emailAddress, historyId: rawHistoryId } = notification
     
-    // Convert historyId to string (Gmail sends it as number)
-    const historyId = String(rawHistoryId)
+     const historyId = String(rawHistoryId)
     
     console.log(`\n[WEBHOOK] Notification for: ${emailAddress} | History: ${historyId}`)
 
-    // 1. Find user by email
-    const profile = await prisma.profile.findFirst({
+     const profile = await prisma.profile.findFirst({
       where: { email: emailAddress },
       include: { settings: true }
     })
@@ -44,33 +43,43 @@ export async function POST(request: Request) {
 
     console.log(`[WEBHOOK] Found user: ${profile.id}`)
 
-    // 2. Get settings
-    const userSettings = profile.settings
-    const accessToken = profile.googleAccessToken
-    const lastHistoryId = profile.gmailHistoryId
+    const accessToken = await getValidGoogleToken(profile.id)
 
     if (!accessToken) {
-      console.log(`[WEBHOOK] No access token for user`)
+      console.log(`[WEBHOOK] Failed to get valid access token`)
       return NextResponse.json({ success: true }, { status: 200 })
     }
 
-    // Check if auto-processing is enabled
+    console.log(`[WEBHOOK] Access token validated`)
+
+    const userSettings = profile.settings
+    const lastHistoryId = profile.gmailHistoryId
+
+    console.log(`[WEBHOOK] DB gmailHistoryId: ${lastHistoryId || '(none)'} (user: ${profile.id})`)
+
     if (!userSettings?.autoCategorizeEnabled) {
       console.log(`[WEBHOOK] Auto-categorize disabled`)
       return NextResponse.json({ success: true }, { status: 200 })
     }
 
-    // 3. Fetch history changes
     if (!lastHistoryId) {
       console.log(`[WEBHOOK] No history ID stored, updating to current: ${historyId}`)
       await prisma.profile.update({
         where: { id: profile.id },
         data: { gmailHistoryId: historyId }
       })
+      console.log(`[WEBHOOK] Stored initial gmailHistoryId in DB: ${historyId}`)
       return NextResponse.json({ success: true }, { status: 200 })
     }
 
     console.log(`[WEBHOOK] Fetching history - From: ${lastHistoryId} To: ${historyId}`)
+
+    // Update historyId IMMEDIATELY to prevent race conditions
+    await prisma.profile.update({
+      where: { id: profile.id },
+      data: { gmailHistoryId: historyId }
+    })
+    console.log(`[WEBHOOK] Updated historyId immediately to: ${historyId}`)
 
     const historyResponse = await fetch(
       `https://www.googleapis.com/gmail/v1/users/me/history?startHistoryId=${lastHistoryId}&historyTypes=messageAdded`,
@@ -91,15 +100,10 @@ export async function POST(request: Request) {
 
     if (!historyData.history || historyData.history.length === 0) {
       console.log(`[WEBHOOK] No new messages in history`)
-      await prisma.profile.update({
-        where: { id: profile.id },
-        data: { gmailHistoryId: historyId }
-      })
       return NextResponse.json({ success: true }, { status: 200 })
     }
 
-    // 4. Extract new INBOX message IDs
-    const newMessageIds: string[] = []
+     const newMessageIds: string[] = []
     historyData.history.forEach((item: any) => {
       if (item.messagesAdded) {
         item.messagesAdded.forEach((added: any) => {
@@ -113,14 +117,9 @@ export async function POST(request: Request) {
     console.log(`[WEBHOOK] Found ${newMessageIds.length} new message(s) in INBOX`)
 
     if (newMessageIds.length === 0) {
-      await prisma.profile.update({
-        where: { id: profile.id },
-        data: { gmailHistoryId: historyId }
-      })
       return NextResponse.json({ success: true }, { status: 200 })
     }
 
-    // 5. Fetch message details
     console.log(`[WEBHOOK] Fetching message details...`)
     
     const messages = await Promise.all(
@@ -137,15 +136,13 @@ export async function POST(request: Request) {
           const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || ''
           const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || ''
 
-          // Skip self-sent emails
-          const fromEmail = extractEmailAddress(from)
+            const fromEmail = extractEmailAddress(from)
           if (fromEmail.toLowerCase() === emailAddress.toLowerCase()) {
             console.log(`[WEBHOOK] Skipping self-sent: ${subject}`)
             return null
           }
 
-          // Extract body
-          let bodyText = ''
+           let bodyText = ''
           if (detail.payload.body?.data) {
             bodyText = Buffer.from(detail.payload.body.data, 'base64').toString('utf-8')
           } else if (detail.payload.parts) {
@@ -161,7 +158,7 @@ export async function POST(request: Request) {
             from,
             subject,
             snippet: detail.snippet,
-            bodyText: bodyText.substring(0, 1000) // Limit for AI
+            bodyText: bodyText.substring(0, 1000)  
           }
         } catch (err) {
           console.error(`Error fetching message ${msgId}:`, err)
@@ -174,16 +171,11 @@ export async function POST(request: Request) {
 
     if (validMessages.length === 0) {
       console.log(`[WEBHOOK] No valid messages to process`)
-      await prisma.profile.update({
-        where: { id: profile.id },
-        data: { gmailHistoryId: historyId }
-      })
       return NextResponse.json({ success: true }, { status: 200 })
     }
 
     console.log(`[WEBHOOK] Processing ${validMessages.length} message(s)`)
 
-    // 6. Categorize with AI (with user preferences)
     console.log(`[WEBHOOK] Categorizing emails with AI (user preferences included)...`)
 
     const emailsText = validMessages.map((email, idx) => 
@@ -199,7 +191,6 @@ Preview: ${email.snippet}
       .map(([key, value]) => `${key}: ${value.description}`)
       .join('\n')
 
-    // Pass user preferences to AI
     const userPreferencesText = userSettings ? `
 USER PREFERENCES (keep these in mind):
 - Draft Settings: ${JSON.stringify(userSettings.draftSettings || {})}
@@ -243,7 +234,6 @@ Return ONLY the JSON object, no other text.`
       console.error('[WEBHOOK ERROR] AI categorization failed:', err)
       console.log('[WEBHOOK] Falling back to default category (FYI)')
       
-      // Fallback: Assign all emails to FYI if AI fails
       categories = validMessages.reduce((acc, email) => {
         acc[email.id] = 'FYI'
         return acc
@@ -259,7 +249,7 @@ Return ONLY the JSON object, no other text.`
       console.log(`     Category: ${category}`)
     })
 
-    // 7. Apply labels (if auto-label enabled)
+    // 8. Apply labels (if auto-label enabled)
     if (userSettings?.autoLabelEnabled) {
       console.log(`[WEBHOOK] Applying labels...`)
       console.log(`[WEBHOOK] Available labels in settings:`, Object.keys((userSettings.labels as any) || {}))
@@ -268,36 +258,15 @@ Return ONLY the JSON object, no other text.`
       
       const labelResults = await Promise.all(
         Object.entries(categories).map(async ([emailId, category]) => {
-          // Try multiple key formats to find the label
-          const possibleKeys = [
-            category,                                    // Exact match: TO_RESPOND
-            category.toLowerCase().replace(/\s+/g, '_'), // Lowercase: to_respond
-            category.toUpperCase().replace(/\s+/g, '_'), // Uppercase: TO_RESPOND
-          ]
-
-          let labelData = null
-          let usedKey = ''
-          
-          for (const key of possibleKeys) {
-            if (labelsMap[key]) {
-              labelData = labelsMap[key]
-              usedKey = key
-              break
-            }
-          }
-
+          const labelData = labelsMap[category]
           const labelId = labelData?.id
-
-          console.log(`[WEBHOOK LABEL] Email ${emailId} -> Category: ${category}`)
-          console.log(`[WEBHOOK LABEL] Tried keys:`, possibleKeys)
-          console.log(`[WEBHOOK LABEL] Found with key: ${usedKey}`)
-          console.log(`[WEBHOOK LABEL] Label data:`, labelData)
-          console.log(`[WEBHOOK LABEL] Label ID:`, labelId)
 
           if (!labelId) {
             console.error(`[WEBHOOK ERROR] No label ID found for category: ${category}`)
             return { emailId, success: false, reason: 'No label ID' }
           }
+
+          console.log(`[WEBHOOK LABEL] Email ${emailId} -> Category: ${category} -> Label: ${labelId}`)
 
           try {
             const response = await fetch(
@@ -335,7 +304,6 @@ Return ONLY the JSON object, no other text.`
       console.log(`[WEBHOOK] Auto-label is DISABLED, skipping label application`)
     }
 
-    // 8. Generate drafts for TO_RESPOND (ALWAYS ENABLED FOR TESTING)
     const toRespondEmails = validMessages.filter(email => 
       categories[email.id] === 'TO_RESPOND'
     )
@@ -382,7 +350,7 @@ Return ONLY the reply text.`
               return { emailId: email.id, success: false, skipped: true }
             }
 
-            // Log generated draft
+             
             console.log(`\n[WEBHOOK DRAFT] Generated for: "${email.subject}"`)
             console.log(`[WEBHOOK DRAFT] To: ${email.from}`)
             console.log(`[WEBHOOK DRAFT] Content:\n${draftBody}\n`)
@@ -445,16 +413,7 @@ Return ONLY the reply text.`
       console.log(`  Total TO_RESPOND emails: ${toRespondEmails.length}`)
       console.log(`  Drafts attempted: ${toRespondEmails.length}`)
     }
-
-    // 9. Update historyId
-    await prisma.profile.update({
-      where: { id: profile.id },
-      data: { gmailHistoryId: historyId }
-    })
-
-    console.log(`[WEBHOOK] Updated history ID to: ${historyId}`)
     
-    // Final summary
     console.log(`\n[WEBHOOK] ===== PROCESSING COMPLETE =====`)
     console.log(`[WEBHOOK] Total messages processed: ${validMessages.length}`)
     console.log(`[WEBHOOK] Messages categorized: ${Object.keys(categories).length}`)
