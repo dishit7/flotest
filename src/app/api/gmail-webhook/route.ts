@@ -19,6 +19,25 @@ interface GmailNotification {
   historyId: string
 }
 
+interface GmailHeader {
+  name: string
+  value: string
+}
+
+interface GmailMessagePart {
+  mimeType: string
+  body?: { data?: string }
+}
+
+interface GmailHistoryItem {
+  messagesAdded?: Array<{
+    message: {
+      id: string
+      labelIds?: string[]
+    }
+  }>
+}
+
 export async function POST(request: Request) {
   try {
      const body: PubSubMessage = await request.json()
@@ -104,9 +123,9 @@ export async function POST(request: Request) {
     }
 
      const newMessageIds: string[] = []
-    historyData.history.forEach((item: any) => {
+    historyData.history.forEach((item: GmailHistoryItem) => {
       if (item.messagesAdded) {
-        item.messagesAdded.forEach((added: any) => {
+        item.messagesAdded.forEach((added) => {
           if (added.message.labelIds?.includes('INBOX')) {
             newMessageIds.push(added.message.id)
           }
@@ -132,9 +151,9 @@ export async function POST(request: Request) {
           if (!res.ok) return null
 
           const detail = await res.json()
-          const headers = detail.payload.headers
-          const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || ''
-          const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || ''
+          const headers: GmailHeader[] = detail.payload.headers
+          const from = headers.find((h) => h.name.toLowerCase() === 'from')?.value || ''
+          const subject = headers.find((h) => h.name.toLowerCase() === 'subject')?.value || ''
 
             const fromEmail = extractEmailAddress(from)
           if (fromEmail.toLowerCase() === emailAddress.toLowerCase()) {
@@ -146,7 +165,7 @@ export async function POST(request: Request) {
           if (detail.payload.body?.data) {
             bodyText = Buffer.from(detail.payload.body.data, 'base64').toString('utf-8')
           } else if (detail.payload.parts) {
-            const textPart = detail.payload.parts.find((p: any) => p.mimeType === 'text/plain')
+            const textPart = detail.payload.parts.find((p: GmailMessagePart) => p.mimeType === 'text/plain')
             if (textPart?.body?.data) {
               bodyText = Buffer.from(textPart.body.data, 'base64').toString('utf-8')
             }
@@ -252,9 +271,8 @@ Return ONLY the JSON object, no other text.`
     // 8. Apply labels (if auto-label enabled)
     if (userSettings?.autoLabelEnabled) {
       console.log(`[WEBHOOK] Applying labels...`)
-      console.log(`[WEBHOOK] Available labels in settings:`, Object.keys((userSettings.labels as any) || {}))
-
-      const labelsMap = (userSettings.labels as any) || {}
+      const labelsMap = (userSettings.labels as Record<string, { id: string; name: string }>) || {}
+      console.log(`[WEBHOOK] Available labels in settings:`, Object.keys(labelsMap))
       
       const labelResults = await Promise.all(
         Object.entries(categories).map(async ([emailId, category]) => {
@@ -312,7 +330,7 @@ Return ONLY the JSON object, no other text.`
       console.log(`[WEBHOOK] Generating ${toRespondEmails.length} draft(s)... (autoDraftEnabled: ${userSettings?.autoDraftEnabled})`)
       console.log(`[WEBHOOK] Note: Draft generation is ALWAYS ON for testing`)
 
-      const draftSettings = (userSettings.draftSettings as any) || {}
+      const draftSettings = (userSettings.draftSettings as Record<string, unknown>) || {}
 
       await Promise.all(
         toRespondEmails.map(async (email) => {
@@ -408,7 +426,6 @@ Return ONLY the reply text.`
         })
       )
 
-      const successfulDrafts = toRespondEmails.length
       console.log(`\n[WEBHOOK] Draft generation summary:`)
       console.log(`  Total TO_RESPOND emails: ${toRespondEmails.length}`)
       console.log(`  Drafts attempted: ${toRespondEmails.length}`)
