@@ -64,19 +64,29 @@ export async function GET(request: NextRequest) {
           console.error('Failed to store tokens or register watch:', dbError)
         }
 
-         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-        fetch(`${baseUrl}/api/gmail/auto-label`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            providerToken: providerToken,
-            userId: userId
+         try {
+          console.log('Starting auto-label process...')
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
+          const autoLabelResponse = await fetch(`${baseUrl}/api/gmail/auto-label`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              providerToken: providerToken,
+              userId: userId
+            })
           })
-        }).catch(err => {
+          
+          if (autoLabelResponse.ok) {
+            const result = await autoLabelResponse.json()
+            console.log('Auto-label completed:', result)
+          } else {
+            console.error('Auto-label failed with status:', autoLabelResponse.status)
+          }
+        } catch (err) {
           console.error('Background auto-label failed:', err)
-        })
+        }
       }
       return response
     }
