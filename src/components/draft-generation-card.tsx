@@ -196,114 +196,116 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
   // Always show the welcome message and categories, even when no emails need responses
 
   return (
-    <Card className="border-green-200 bg-green-50/50">
+    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
       <CardHeader>
         <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="mt-1">
-              <Mail className="h-5 w-5 text-green-600" />
+          <div className="flex items-start gap-4">
+            <div className="p-2 rounded-lg bg-primary/10 mt-1">
+              <Mail className="h-6 w-6 text-primary" />
             </div>
-            <div className="flex-1">
-              <CardTitle className="text-xl">Welcome to flobase!</CardTitle>
-              <CardDescription className="mt-2 space-y-3">
-                <p>We&apos;ve analyzed your emails and created <strong>8 smart categories</strong> to help you stay organized:</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex-1 space-y-4">
+              <div>
+                <CardTitle className="text-2xl">Welcome to Flobase!</CardTitle>
+                <CardDescription className="mt-2 text-base">
+                  We&apos;ve analyzed your emails and created <strong>8 smart categories</strong> to help you stay organized:
+                </CardDescription>
+              </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                    <span>1: To Respond</span>
+                    <div className="h-3 w-3 rounded-full bg-red-500 dark:bg-red-600"></div>
+                    <span className="text-foreground">1: To Respond</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-orange-400"></div>
-                    <span>2: FYI</span>
+                    <div className="h-3 w-3 rounded-full bg-orange-400 dark:bg-orange-500"></div>
+                    <span className="text-foreground">2: FYI</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
-                    <span>3: Comment</span>
+                    <div className="h-3 w-3 rounded-full bg-yellow-400 dark:bg-yellow-500"></div>
+                    <span className="text-foreground">3: Comment</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                    <span>4: Notification</span>
+                    <div className="h-3 w-3 rounded-full bg-green-500 dark:bg-green-600"></div>
+                    <span className="text-foreground">4: Notification</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                    <span>5: Meeting Update</span>
+                    <div className="h-3 w-3 rounded-full bg-blue-500 dark:bg-blue-600"></div>
+                    <span className="text-foreground">5: Meeting Update</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-purple-500"></div>
-                    <span>6: Awaiting Reply</span>
+                    <div className="h-3 w-3 rounded-full bg-purple-500 dark:bg-purple-600"></div>
+                    <span className="text-foreground">6: Awaiting Reply</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-indigo-400"></div>
-                    <span>7: Actioned</span>
+                    <div className="h-3 w-3 rounded-full bg-indigo-400 dark:bg-indigo-500"></div>
+                    <span className="text-foreground">7: Actioned</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-gray-400"></div>
-                    <span>8: Marketing</span>
+                    <div className="h-3 w-3 rounded-full bg-gray-400 dark:bg-gray-500"></div>
+                    <span className="text-foreground">8: Marketing</span>
                   </div>
                 </div>
                 {toRespondCount > 0 && (
-                  <div className="mt-3 p-3 bg-orange-50 rounded-md border border-orange-200">
-                    <p className="text-orange-800 font-medium">
+                  <div className="p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p className="text-orange-800 dark:text-orange-200 font-medium text-sm">
                       You have <Badge variant="destructive" className="mx-1">{toRespondCount}</Badge> 
                       email{toRespondCount > 1 ? 's' : ''} in your &quot;To Respond&quot; category that need your attention
                     </p>
                   </div>
                 )}
-              </CardDescription>
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-3">
+      <CardContent className="space-y-5">
           {alreadyHasDrafts > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span>{alreadyHasDrafts} already have draft replies</span>
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400" />
+              <span className="text-muted-foreground">{alreadyHasDrafts} already have draft replies</span>
             </div>
           )}
 
           {generating && progress && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Generating drafts...</span>
-                <span className="font-medium">{progress.current} / {progress.total}</span>
+                <span className="font-medium text-foreground">{progress.current} / {progress.total}</span>
               </div>
-              <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-600 transition-all duration-300"
+                  className="h-full bg-primary transition-all duration-300"
                   style={{ width: `${(progress.current / progress.total) * 100}%` }}
                 />
               </div>
             </div>
           )}
 
-          <Button
-            onClick={generateDrafts}
-            disabled={generating || toRespondCount === 0}
-            className="w-full sm:w-auto"
-            size="lg"
-          >
-            {generating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Drafts...
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generate Automatic Drafts
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={generateDrafts}
+              disabled={generating || toRespondCount === 0}
+              className="w-full"
+              size="lg"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Generating Drafts...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Generate Automatic Drafts
+                </>
+              )}
+            </Button>
 
-          <p className="text-xs text-muted-foreground">
-            {toRespondCount > 0 
-              ? `AI will analyze ${toRespondCount} email${toRespondCount > 1 ? 's' : ''} and create personalized draft responses in your Gmail Drafts folder`
-              : "No emails need responses right now - you're all caught up!"
-            }
-          </p>
-        </div>
+            <p className="text-sm text-muted-foreground text-center leading-relaxed">
+              {toRespondCount > 0 
+                ? `AI will analyze ${toRespondCount} email${toRespondCount > 1 ? 's' : ''} and create personalized draft responses in your Gmail Drafts folder`
+                : "No emails need responses right now - you're all caught up!"
+              }
+            </p>
+          </div>
       </CardContent>
     </Card>
   )

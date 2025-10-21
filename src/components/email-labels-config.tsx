@@ -258,15 +258,15 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
 
   const getColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
-      'red': 'bg-orange-500 text-white',
-      'orange': 'bg-orange-400 text-white',
-      'yellow': 'bg-yellow-400 text-black',
-      'green': 'bg-green-500 text-white',
-      'blue': 'bg-blue-500 text-white',
-      'purple': 'bg-purple-500 text-white',
-      'gray': 'bg-pink-400 text-white'
+      'red': 'bg-orange-500 text-white dark:bg-orange-600',
+      'orange': 'bg-orange-400 text-white dark:bg-orange-500',
+      'yellow': 'bg-yellow-400 text-gray-900 dark:bg-yellow-500 dark:text-gray-900',
+      'green': 'bg-green-500 text-white dark:bg-green-600',
+      'blue': 'bg-blue-500 text-white dark:bg-blue-600',
+      'purple': 'bg-purple-500 text-white dark:bg-purple-600',
+      'gray': 'bg-pink-400 text-white dark:bg-pink-500'
     }
-    return `inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorMap[color] || 'bg-gray-500 text-white'}`
+    return `inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorMap[color] || 'bg-gray-500 text-white dark:bg-gray-600'}`
   }
 
   const categoryDescriptions: Record<string, string> = {
@@ -289,33 +289,29 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
   }
 
   return (
-    <div className={`w-full max-w-4xl mx-auto ${className}`}>
+    <div className={`w-full max-w-5xl mx-auto space-y-8 ${className}`}>
   
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">
-            We will organize your emails using the categories below to keep you focused on what&apos;s important.
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Email Categorization
         </h1>
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={isEnabled}
-            onCheckedChange={setIsEnabled}
-            className="data-[state=checked]:bg-blue-600"
-          />
-        </div>
+        <p className="text-muted-foreground text-base leading-relaxed max-w-3xl">
+          We will organize your emails using the categories below to keep you focused on what&apos;s important.
+        </p>
       </div>
 
      
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8">
+      <div className="bg-muted/50 border border-border rounded-lg p-5">
         <div className="flex items-start space-x-3">
-          <Info className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
-          <p className="text-gray-700 text-sm">
+          <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Turning on a category below will move emails in that category out of your main inbox and into a folder (in Outlook) or label (in Gmail).
           </p>
         </div>
       </div>
 
      
-      <div className="space-y-4">
+      <div className="space-y-3">
         {Object.entries(labels).map(([key, label]) => {
           const description = categoryDescriptions[key] || "Custom label"
           const hasCustomization = customization[key] && Object.keys(customization[key]).length > 0
@@ -323,7 +319,7 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
           return (
             <div
               key={key}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-5 border border-border rounded-lg hover:bg-muted/50 transition-all hover:shadow-sm"
             >
               <div className="flex items-center space-x-4">
                 <Checkbox
@@ -335,14 +331,14 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
                   <span className={getColorClass(label.color)}>
                     {label.name.split(': ')[1] || label.name}
                   </span>
-                  <span className="text-gray-700 text-sm">
+                  <span className="text-foreground text-sm">
                     {description}
                   </span>
                   {label.isCustom && (
-                    <span className="text-xs text-gray-500 italic">(Custom)</span>
+                    <span className="text-xs text-muted-foreground italic">(Custom)</span>
                   )}
                   {hasCustomization && (
-                    <span className="text-xs text-blue-600 font-medium">(Customized)</span>
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">(Customized)</span>
                   )}
                 </div>
               </div>
@@ -359,7 +355,7 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => openDeleteModal(key)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -370,11 +366,11 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
         })}
       </div>
  
-      <div className="mt-6">
+      <div className="pt-4 border-t">
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="w-full">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="lg" className="w-full">
+              <Plus className="mr-2 h-5 w-5" />
               Create Custom Label
             </Button>
           </DialogTrigger>
@@ -402,8 +398,8 @@ export function EmailLabelsConfig({ className }: EmailLabelsConfigProps) {
                       onClick={() => setNewLabelColor(color.value)}
                       className={`h-10 rounded-md border-2 transition-all ${
                         newLabelColor === color.value
-                          ? 'border-gray-900 ring-2 ring-gray-400'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-foreground ring-2 ring-ring'
+                          : 'border-border hover:border-muted-foreground'
                       }`}
                       style={{ backgroundColor: color.hex }}
                       title={color.name}
@@ -597,13 +593,13 @@ function InputWithTags({
           {values.map((value) => (
             <div
               key={value}
-              className="flex items-center gap-1 bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm"
+              className="flex items-center gap-1 bg-muted text-foreground px-2 py-1 rounded text-sm"
             >
               <span>{value}</span>
               <button
                 type="button"
                 onClick={() => onRemove(value)}
-                className="hover:text-red-600"
+                className="hover:text-red-600 dark:hover:text-red-400"
               >
                 <X className="h-3 w-3" />
               </button>

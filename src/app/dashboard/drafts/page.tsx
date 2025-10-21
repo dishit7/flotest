@@ -125,15 +125,15 @@ export default function DraftsSettingsPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="w-full max-w-5xl mx-auto space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Draft Settings</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-base">
             Customize how AI generates email draft responses
           </p>
         </div>
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving} size="lg">
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -149,30 +149,30 @@ export default function DraftsSettingsPage() {
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 h-11">
+          <TabsTrigger value="basic" className="text-sm">Basic</TabsTrigger>
+          <TabsTrigger value="intermediate" className="text-sm">Intermediate</TabsTrigger>
+          <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
         </TabsList>
 
         {/* BASIC TAB */}
-        <TabsContent value="basic" className="space-y-4">
+        <TabsContent value="basic" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Basic Settings</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl">Basic Settings</CardTitle>
+              <CardDescription className="text-base mt-1.5">
                 The most commonly customized options for draft generation
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 pt-6">
               {/* Draft Tone */}
-              <div className="space-y-2">
-                <Label htmlFor="draftTone">Draft Tone</Label>
+              <div className="space-y-3">
+                <Label htmlFor="draftTone" className="text-base font-medium">Draft Tone</Label>
                 <Select
                   value={settings.draftTone}
                   onValueChange={(value) => updateSetting('draftTone', value as DraftSettings['draftTone'])}
                 >
-                  <SelectTrigger id="draftTone">
+                  <SelectTrigger id="draftTone" className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -183,19 +183,19 @@ export default function DraftsSettingsPage() {
                     <SelectItem value="direct">Direct</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   The overall tone and style of your drafted responses
                 </p>
               </div>
 
               {/* Draft Length */}
-              <div className="space-y-2">
-                <Label htmlFor="draftLength">Draft Length</Label>
+              <div className="space-y-3">
+                <Label htmlFor="draftLength" className="text-base font-medium">Draft Length</Label>
                 <Select
                   value={settings.draftLength}
                   onValueChange={(value) => updateSetting('draftLength', value as DraftSettings['draftLength'])}
                 >
-                  <SelectTrigger id="draftLength">
+                  <SelectTrigger id="draftLength" className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -204,16 +204,16 @@ export default function DraftsSettingsPage() {
                     <SelectItem value="long">Long (3-4 paragraphs)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Target length for generated draft responses
                 </p>
               </div>
 
               {/* Include Greeting */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="includeGreeting">Include Greeting</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex items-start justify-between gap-4 py-4 px-4 rounded-lg border bg-card">
+                <div className="space-y-1 flex-1">
+                  <Label htmlFor="includeGreeting" className="text-base font-medium">Include Greeting</Label>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     Start emails with a greeting like &quot;Hi&quot; or &quot;Hello&quot;
                   </p>
                 </div>
@@ -225,10 +225,10 @@ export default function DraftsSettingsPage() {
               </div>
 
               {/* Include Closing */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="includeClosing">Include Closing</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex items-start justify-between gap-4 py-4 px-4 rounded-lg border bg-card">
+                <div className="space-y-1 flex-1">
+                  <Label htmlFor="includeClosing" className="text-base font-medium">Include Closing</Label>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     End emails with a closing like &quot;Best regards&quot;
                   </p>
                 </div>
@@ -243,15 +243,15 @@ export default function DraftsSettingsPage() {
         </TabsContent>
 
         {/* INTERMEDIATE TAB */}
-        <TabsContent value="intermediate" className="space-y-4">
+        <TabsContent value="intermediate" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Intermediate Settings</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl">Intermediate Settings</CardTitle>
+              <CardDescription className="text-base mt-1.5">
                 Fine-tune your drafts with custom instructions and templates
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 pt-6">
               {/* Custom Instructions */}
               <div className="space-y-2">
                 <Label htmlFor="customInstructions">Custom Instructions</Label>
@@ -307,15 +307,15 @@ export default function DraftsSettingsPage() {
         </TabsContent>
 
         {/* ADVANCED TAB */}
-        <TabsContent value="advanced" className="space-y-4">
+        <TabsContent value="advanced" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Advanced Settings</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl">Advanced Settings</CardTitle>
+              <CardDescription className="text-base mt-1.5">
                 Fine-grained control over draft generation behavior
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 pt-6">
               {/* Formality Level */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -340,10 +340,10 @@ export default function DraftsSettingsPage() {
               </div>
 
               {/* Use Emojis */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="useEmojis">Use Emojis</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex items-start justify-between gap-4 py-4 px-4 rounded-lg border bg-card">
+                <div className="space-y-1 flex-1">
+                  <Label htmlFor="useEmojis" className="text-base font-medium">Use Emojis</Label>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     Allow the AI to use emojis in draft responses
                   </p>
                 </div>
@@ -423,16 +423,16 @@ export default function DraftsSettingsPage() {
       </Tabs>
 
       {/* Save button at bottom */}
-      <div className="flex justify-end">
-        <Button onClick={saveSettings} disabled={saving} size="lg">
+      <div className="flex justify-end pt-4 border-t">
+        <Button onClick={saveSettings} disabled={saving} size="lg" className="min-w-[200px]">
           {saving ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Saving Changes...
             </>
           ) : (
             <>
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="mr-2 h-5 w-5" />
               Save All Settings
             </>
           )}
