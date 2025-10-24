@@ -3,8 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Mail, Sparkles, Zap, Shield, ArrowRight } from "lucide-react";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  
+  const params = await searchParams;
+  if (params.code) {
+    redirect(`/auth/callback?code=${params.code}`);
+  }
   return (
     <div className="min-h-dvh">
  

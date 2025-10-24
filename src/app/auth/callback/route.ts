@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { registerGmailWatch } from '@/lib/gmail-watch'
+import { enqueueCategorization, enqueueSignupInitialization } from '@/lib/queue-helpers'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -35,22 +36,26 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error && data.session) {
-       if (data.session.provider_token) {
-        const userId = data.session.user.id
-        const providerToken = data.session.provider_token
-        const refreshToken = data.session.provider_refresh_token || undefined
-        
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error || !data.session) {
+        return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
+      }
+
+      const userId = data.session.user.id
+      const providerToken = data.session.provider_token
+      const refreshToken = data.session.provider_refresh_token || undefined
+      
+      if (providerToken) {
         try {
-           console.log('Registering Gmail watch for user:', data.session.user.email)
           const watchResponse = await registerGmailWatch({
             accessToken: providerToken,
             refreshToken,
             userId
           })
           
-           await prisma.profile.update({
+          await prisma.profile.update({
             where: { id: userId },
             data: {
               googleAccessToken: providerToken,
@@ -58,37 +63,47 @@ export async function GET(request: NextRequest) {
               gmailHistoryId: watchResponse.historyId,
             }
           })
-          console.log('Stored Google tokens and historyId in database')
-          console.log('Gmail watch expires:', new Date(parseInt(watchResponse.expiration)).toISOString())
         } catch (dbError) {
-          console.error('Failed to store tokens or register watch:', dbError)
+          console.error('[AUTH_CALLBACK] Failed to store tokens or register watch:', dbError)
         }
 
-         try {
-          console.log('Starting auto-label process...')
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-          const autoLabelResponse = await fetch(`${baseUrl}/api/gmail/auto-label`, {
-            method: 'POST',
+        const userSettings = await prisma.userSettings.findUnique({
+          where: { userId }
+        })
+
+        const isNewUser = !userSettings?.labels || Object.keys(userSettings.labels).length === 0
+
+        if (isNewUser) {
+          await enqueueSignupInitialization(
+            userId, 
+            providerToken, 
+            refreshToken, 
+            data.session.user.email!
+          )
+        } else {
+          const gmailResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50`, {
             headers: {
+              'Authorization': `Bearer ${providerToken}`,
               'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              providerToken: providerToken,
-              userId: userId
-            })
+            }
           })
           
-          if (autoLabelResponse.ok) {
-            const result = await autoLabelResponse.json()
-            console.log('Auto-label completed:', result)
-          } else {
-            console.error('Auto-label failed with status:', autoLabelResponse.status)
+          if (gmailResponse.ok) {
+            const gmailData = await gmailResponse.json()
+            const emailIds = gmailData.messages?.map((msg: any) => msg.id) || []
+            
+            if (emailIds.length > 0) {
+              await enqueueCategorization(userId, providerToken, emailIds)
+            }
           }
-        } catch (err) {
-          console.error('Background auto-label failed:', err)
         }
       }
+      
       return response
+      
+    } catch (authError) {
+      console.error('[AUTH_CALLBACK] Unexpected error during auth:', authError)
+      return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
     }
   }
 
