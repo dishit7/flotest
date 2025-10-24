@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Mail, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import axios from 'axios'
 
 interface DraftGenerationCardProps {
   onDraftsGenerated?: () => void
@@ -35,12 +36,8 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       }
 
       // First, get all labels to find the "to respond" label ID
-      const labelsResponse = await fetch('/api/gmail/labels')
-      if (!labelsResponse.ok) {
-        throw new Error('Failed to fetch labels')
-      }
-      
-      const labelsData = await labelsResponse.json()
+      const labelsResponse = await axios.get('/api/gmail/labels')
+      const labelsData = labelsResponse.data
       const toRespondLabel = labelsData.toRespondLabel
       
       if (!toRespondLabel) {
@@ -52,13 +49,8 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       console.log('Found "to respond" label:', toRespondLabel.name, 'ID:', toRespondLabel.id)
 
        
-      const response = await fetch('/api/gmail/messages?maxResults=100')
-      if (!response.ok) {
-        throw new Error('Failed to fetch emails')
-      }
-
-      const data = await response.json()
-      const emails = data.emails || []
+      const response = await axios.get('/api/gmail/messages?maxResults=100')
+      const emails = response.data.emails || []
 
       // Count emails that have the "to respond" label ID
       const toRespond = emails.filter((email: { labels?: string[] }) => {
@@ -85,11 +77,8 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       setProgress({ current: 0, total: toRespondCount })
 
       // Fetch TO_RESPOND emails
-      const response = await fetch('/api/gmail/messages?maxResults=100')
-      if (!response.ok) throw new Error('Failed to fetch emails')
-
-      const data = await response.json()
-      const emails = data.emails || []
+      const response = await axios.get('/api/gmail/messages?maxResults=100')
+      const emails = response.data.emails || []
 
       const toRespondEmails = emails.filter((email: { labels?: string[] }) => 
         email.labels?.some((label: string) => label.includes('to respond') || label.includes('1:'))
@@ -101,25 +90,21 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
       }
 
       // Categorize and generate drafts
-      const categorizeResponse = await fetch('/api/categorize-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          emails: toRespondEmails.map((e: { id: string; from: string; subject: string; snippet: string; body: string }) => ({
-            id: e.id,
-            from: e.from,
-            subject: e.subject,
-            snippet: e.snippet,
-            body: e.body,
-          }))
-        })
+      const categorizeResponse = await axios.post('/api/categorize-email', {
+        emails: toRespondEmails.map((e: { id: string; from: string; subject: string; snippet: string; body: string }) => ({
+          id: e.id,
+          from: e.from,
+          subject: e.subject,
+          snippet: e.snippet,
+          body: e.body,
+        }))
       })
 
-      if (!categorizeResponse.ok) {
+      if (categorizeResponse.status !== 200) {
         throw new Error('Failed to generate drafts')
       }
 
-      const { drafts } = await categorizeResponse.json()
+      const { drafts } = categorizeResponse.data
 
       if (!drafts || Object.keys(drafts).length === 0) {
         toast.info('No drafts were generated')
@@ -135,18 +120,14 @@ export function DraftGenerationCard({ onDraftsGenerated }: DraftGenerationCardPr
         if (!email || !draftBody) continue
 
         try {
-          const response = await fetch('/api/gmail/create-draft', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: extractEmailAddress(email.from),
-              subject: email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`,
-              body: draftBody as string,
-              threadId: email.threadId,
-            })
+          const response = await axios.post('/api/gmail/create-draft', {
+            to: extractEmailAddress(email.from),
+            subject: email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`,
+            body: draftBody as string,
+            threadId: email.threadId,
           })
 
-          if (response.ok) {
+          if (response.status === 200) {
             successCount++
             setProgress({ current: successCount, total })
           }

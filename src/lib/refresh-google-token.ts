@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import axios from 'axios'
 
 interface RefreshTokenResponse {
   access_token: string
@@ -38,14 +39,14 @@ export async function getValidGoogleToken(userId: string): Promise<string | null
     const accessToken = profile.googleAccessToken
     const refreshToken = profile.googleRefreshToken
 
-    const testResponse = await fetch(
+    const testResponse = await axios.get(
       'https://www.googleapis.com/gmail/v1/users/me/profile',
       {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       }
     )
 
-    if (testResponse.ok) {
+    if (testResponse.status === 200) {
       return accessToken
     }
 
@@ -54,24 +55,24 @@ export async function getValidGoogleToken(userId: string): Promise<string | null
     console.log('[TOKEN] GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET)
     console.log('[TOKEN] Using refresh token (first 20 chars):', refreshToken.substring(0, 20))
 
-    const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
+    const refreshResponse = await axios.post('https://oauth2.googleapis.com/token', 
+      new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
         refresh_token: refreshToken,
         grant_type: 'refresh_token'
-      })
-    })
+      }),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }
+    )
 
-    if (!refreshResponse.ok) {
-      const error = await refreshResponse.text()
-      console.error('[TOKEN ERROR] Failed to refresh:', error)
+    if (refreshResponse.status !== 200) {
+      console.error('[TOKEN ERROR] Failed to refresh:', JSON.stringify(refreshResponse.data))
       return null
     }
 
-    const tokens: RefreshTokenResponse = await refreshResponse.json()
+    const tokens: RefreshTokenResponse = refreshResponse.data
     const newAccessToken = tokens.access_token
 
     await prisma.profile.update({

@@ -4,6 +4,7 @@ import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { EMAIL_CATEGORIES } from '@/lib/email-categories'
 import { getValidGoogleToken } from '@/lib/refresh-google-token'
+import axios from 'axios'
 
 interface PubSubMessage {
   message: {
@@ -100,22 +101,21 @@ export async function POST(request: Request) {
     })
     console.log(`[WEBHOOK] Updated historyId immediately to: ${historyId}`)
 
-    const historyResponse = await fetch(
+    const historyResponse = await axios.get(
       `https://www.googleapis.com/gmail/v1/users/me/history?startHistoryId=${lastHistoryId}&historyTypes=messageAdded`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     )
 
-    if (!historyResponse.ok) {
-      const errorText = await historyResponse.text()
+    if (historyResponse.status !== 200) {
       console.error(`[WEBHOOK ERROR] History fetch failed`)
       console.error(`[WEBHOOK ERROR] Status: ${historyResponse.status} ${historyResponse.statusText}`)
-      console.error(`[WEBHOOK ERROR] Response: ${errorText}`)
+      console.error(`[WEBHOOK ERROR] Response: ${JSON.stringify(historyResponse.data)}`)
       console.error(`[WEBHOOK ERROR] Requested historyId: ${lastHistoryId}`)
       console.error(`[WEBHOOK ERROR] Current historyId: ${historyId}`)
       return NextResponse.json({ success: false }, { status: 200 })
     }
 
-    const historyData = await historyResponse.json()
+    const historyData = historyResponse.data
 
     if (!historyData.history || historyData.history.length === 0) {
       console.log(`[WEBHOOK] No new messages in history`)
@@ -144,13 +144,13 @@ export async function POST(request: Request) {
     const messages = await Promise.all(
       newMessageIds.map(async (msgId) => {
         try {
-          const res = await fetch(
+          const res = await axios.get(
             `https://www.googleapis.com/gmail/v1/users/me/messages/${msgId}?format=full`,
             { headers: { 'Authorization': `Bearer ${accessToken}` } }
           )
-          if (!res.ok) return null
+          if (res.status !== 200) return null
 
-          const detail = await res.json()
+          const detail = res.data
           const headers: GmailHeader[] = detail.payload.headers
           const from = headers.find((h) => h.name.toLowerCase() === 'from')?.value || ''
           const subject = headers.find((h) => h.name.toLowerCase() === 'subject')?.value || ''
@@ -287,27 +287,25 @@ Return ONLY the JSON object, no other text.`
           console.log(`[WEBHOOK LABEL] Email ${emailId} -> Category: ${category} -> Label: ${labelId}`)
 
           try {
-            const response = await fetch(
+            const response = await axios.post(
               `https://www.googleapis.com/gmail/v1/users/me/messages/${emailId}/modify`,
+              { addLabelIds: [labelId] },
               {
-                method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${accessToken}`,
                   'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ addLabelIds: [labelId] })
+                }
               }
             )
 
-            if (response.ok) {
+            if (response.status === 200) {
               console.log(`[WEBHOOK LABEL] Successfully applied label "${category}" to email ${emailId}`)
               return { emailId, success: true, category, labelId }
             } else {
-              const errorText = await response.text()
               console.error(`[WEBHOOK ERROR] Failed to apply label to ${emailId}`)
               console.error(`[WEBHOOK ERROR] Status: ${response.status}`)
-              console.error(`[WEBHOOK ERROR] Response: ${errorText}`)
-              return { emailId, success: false, error: errorText }
+              console.error(`[WEBHOOK ERROR] Response: ${JSON.stringify(response.data)}`)
+              return { emailId, success: false, error: 'Label application failed' }
             }
           } catch (err) {
             console.error(`[WEBHOOK ERROR] Error labeling ${emailId}:`, err)
@@ -391,34 +389,32 @@ Return ONLY the reply text.`
               .replace(/\//g, '_')
               .replace(/=+$/, '')
 
-            const draftResponse = await fetch(
+            const draftResponse = await axios.post(
               'https://www.googleapis.com/gmail/v1/users/me/drafts',
               {
-                method: 'POST',
+                message: { 
+                  raw: encodedEmail,
+                  threadId: email.threadId
+                }
+              },
+              {
                 headers: {
                   'Authorization': `Bearer ${accessToken}`,
                   'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  message: { 
-                    raw: encodedEmail,
-                    threadId: email.threadId
-                  }
-                })
+                }
               }
             )
 
-            if (draftResponse.ok) {
-              const draftData = await draftResponse.json()
+            if (draftResponse.status === 200) {
+              const draftData = draftResponse.data
               console.log(`[WEBHOOK] Draft created successfully in Gmail`)
               console.log(`[WEBHOOK] Draft ID: ${draftData.id}`)
               console.log(`[WEBHOOK] Subject: ${email.subject}`)
               return { emailId: email.id, success: true, draftId: draftData.id }
             } else {
-              const errorData = await draftResponse.text()
               console.error(`[WEBHOOK ERROR] Failed to create draft: ${email.subject}`)
-              console.error(`[WEBHOOK ERROR] Gmail error: ${errorData}`)
-              return { emailId: email.id, success: false }
+              console.error(`[WEBHOOK ERROR] Response: ${JSON.stringify(draftResponse.data)}`)
+              return { emailId: email.id, success: false, error: 'Draft creation failed' }
             }
           } catch (err) {
             console.error(`[WEBHOOK ERROR] Error creating draft for ${email.id}:`, err)

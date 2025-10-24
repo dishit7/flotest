@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import axios from 'axios'
 
 interface GmailMessage {
   id: string
@@ -56,10 +57,10 @@ export async function GET(request: Request) {
     
     if (providerToken) {
       try {
-        const tokenInfoResponse = await fetch(
+        const tokenInfoResponse = await axios.get(
           `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${providerToken}`
         )
-        const tokenInfo = await tokenInfoResponse.json()
+        const tokenInfo = tokenInfoResponse.data
         console.log('Token Info:', JSON.stringify(tokenInfo, null, 2))
       } catch (e) {
         console.log('Could not get token info:', e)
@@ -79,22 +80,21 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const maxResults = searchParams.get('maxResults') || '10'
 
-    const messagesResponse = await fetch(
+    const messagesResponse = await axios.get(
       `https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=${maxResults}`,
       {
         headers: { 'Authorization': `Bearer ${providerToken}` },
       }
     )
 
-    if (!messagesResponse.ok) {
-      const errorData = await messagesResponse.json()
+    if (messagesResponse.status !== 200) {
       return NextResponse.json(
-        { error: 'Failed to fetch messages from Gmail', details: errorData },
+        { error: 'Failed to fetch messages from Gmail', details: messagesResponse.data },
         { status: messagesResponse.status }
       )
     }
 
-    const messagesData: GmailListResponse = await messagesResponse.json()
+    const messagesData: GmailListResponse = messagesResponse.data
 
     if (!messagesData.messages || messagesData.messages.length === 0) {
       return NextResponse.json({ emails: [] })
@@ -145,16 +145,16 @@ export async function GET(request: Request) {
     }
 
     const emailDetailsPromises = messagesData.messages.map(async (message) => {
-      const detailResponse = await fetch(
+      const detailResponse = await axios.get(
         `https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}?format=full`,
         {
           headers: { 'Authorization': `Bearer ${providerToken}` },
         }
       )
 
-      if (!detailResponse.ok) return null
+      if (detailResponse.status !== 200) return null
 
-      const detail: GmailMessageDetail = await detailResponse.json()
+      const detail: GmailMessageDetail = detailResponse.data
       const headers = detail.payload.headers
       const from = headers.find(h => h.name.toLowerCase() === 'from')?.value || 'Unknown'
       const subject = headers.find(h => h.name.toLowerCase() === 'subject')?.value || '(No Subject)'
