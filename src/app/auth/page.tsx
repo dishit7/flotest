@@ -203,7 +203,7 @@ export default function AuthPage() {
                   <ul className="text-xs text-muted-foreground space-y-1.5 list-none">
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">•</span>
-                      <span>Click "Continue with Google" to get started</span>
+                      <span>Click &quot;Continue with Google&quot; to get started</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">•</span>

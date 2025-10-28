@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Loader2, Save, X } from 'lucide-react'
+import { ContactContextManager, type ContactContext } from '@/components/contact-context-manager'
 
 interface DraftSettings {
   draftTone: 'professional' | 'friendly' | 'casual' | 'formal' | 'direct';
@@ -25,6 +26,7 @@ interface DraftSettings {
   formalityLevel?: number;
   avoidWords?: string[];
   preferredPhrases?: string[];
+  contactContext?: ContactContext[];
 }
 
 export default function DraftsSettingsPage() {
@@ -40,6 +42,7 @@ export default function DraftsSettingsPage() {
     useEmojis: false,
     avoidWords: [],
     preferredPhrases: [],
+    contactContext: [],
   })
 
   const [newAvoidWord, setNewAvoidWord] = useState('')
@@ -149,10 +152,11 @@ export default function DraftsSettingsPage() {
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-11">
+        <TabsList className="grid w-full grid-cols-4 h-11">
           <TabsTrigger value="basic" className="text-sm">Basic</TabsTrigger>
           <TabsTrigger value="intermediate" className="text-sm">Intermediate</TabsTrigger>
           <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
+          <TabsTrigger value="contacts" className="text-sm">Contacts</TabsTrigger>
         </TabsList>
 
         {/* BASIC TAB */}
@@ -417,6 +421,24 @@ export default function DraftsSettingsPage() {
                   Phrases you&apos;d like the AI to use when appropriate
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* CONTACTS TAB */}
+        <TabsContent value="contacts" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Contact Context</CardTitle>
+              <CardDescription className="text-base mt-1.5">
+                Add information about your contacts to help the AI generate personalized drafts
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ContactContextManager
+                contacts={settings.contactContext || []}
+                onContactsChange={(contacts) => updateSetting('contactContext', contacts)}
+              />
             </CardContent>
           </Card>
         </TabsContent>

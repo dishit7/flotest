@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
 
           if (gmailResponse.status === 200) {
             const gmailData = gmailResponse.data
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const emailIds = gmailData.messages?.map((msg: any) => msg.id) || []
             
             if (emailIds.length > 0) {

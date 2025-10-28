@@ -277,6 +277,49 @@ function extractEmailAddress(from: string): string {
   return match ? match[1] : from
 }
 
+ 
+function getContactContext(emailAddress: string, contacts?: Array<{
+  id: string
+  name: string
+  email: string
+  company?: string
+  role?: string
+  relationship: string
+  communicationStyle: {
+    tone: string
+    length: string
+    frequency: string
+  }
+  preferences: {
+    responseTime: string
+    topics: string[]
+    avoidTopics: string[]
+  }
+  notes: string
+}>): string | null {
+  if (!contacts || contacts.length === 0) return null
+  
+  const normalizedAddress = emailAddress.toLowerCase().trim()
+  const contact = contacts.find(c => c.email.toLowerCase().trim() === normalizedAddress)
+  
+  if (!contact) return null
+  
+  let context = `Contact Information for ${contact.name}:\n`
+  if (contact.relationship) context += `- Relationship: ${contact.relationship}\n`
+  if (contact.communicationStyle) {
+    context += `- Communication Style: ${contact.communicationStyle.tone} tone, ${contact.communicationStyle.length} length, ${contact.communicationStyle.frequency} frequency\n`
+  }
+  if (contact.preferences?.topics && contact.preferences.topics.length > 0) {
+    context += `- Preferred Topics: ${contact.preferences.topics.join(', ')}\n`
+  }
+  if (contact.preferences?.avoidTopics && contact.preferences.avoidTopics.length > 0) {
+    context += `- Topics to Avoid: ${contact.preferences.avoidTopics.join(', ')}\n`
+  }
+  if (contact.notes) context += `- Notes: ${contact.notes}\n`
+  
+  return context
+}
+
 // Helper function to build prompt based on user settings
 function buildPromptWithSettings(
   from: string,
@@ -307,12 +350,21 @@ function buildPromptWithSettings(
     detailed: 'Provide thorough explanations and comprehensive responses.'
   }
 
+   const emailAddress = extractEmailAddress(from)
+  
+   const contactContext = getContactContext(emailAddress, settings.contactContext)
+  
   // Build the base prompt
   let prompt = `You are an email assistant. Generate a ${toneDescriptions[settings.draftTone]} reply to the following email.\n\n`
   
   prompt += `From: ${from}\n`
   prompt += `Subject: ${subject}\n`
   prompt += `Content:\n${emailBody.substring(0, 2000)}\n\n`
+  
+   if (contactContext) {
+    prompt += `${contactContext}\n`
+    prompt += `IMPORTANT: Use the above contact information to personalize the draft. Adjust the tone, topics, and communication style based on the contact's preferences.\n\n`
+  }
   
   prompt += `Write a ${toneDescriptions[settings.draftTone]} reply that:\n`
   prompt += `1. Is approximately ${lengthDescriptions[settings.draftLength]} in length\n`

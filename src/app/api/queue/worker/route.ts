@@ -289,6 +289,7 @@ async function fetchEmailDetail(accessToken: string, emailId: string) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function categorizeSingleEmailWithAI(email: any): Promise<EmailCategory> {
   console.log(`[AI_CATEGORIZE_SINGLE] Categorizing email: ${email.subject}`)
   
@@ -371,6 +372,7 @@ async function applyLabelToEmail(accessToken: string, emailId: string, labelId: 
   console.log(`[APPLY_LABEL] Successfully applied label ${labelId} to email ${emailId}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function categorizeEmailsWithAI(emails: any[]) {
   if (emails.length === 0) {
     console.log(`[AI_CATEGORIZE] No emails to categorize`)
@@ -450,6 +452,7 @@ Return ONLY the JSON object, no other text.`
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function applyLabelsToEmails(accessToken: string, emails: any[], categories: any, labels: any) {
   if (!labels.labelMap || emails.length === 0) {
     console.log(`[APPLY_LABELS] No labels or emails to process`)
@@ -513,6 +516,7 @@ async function applyLabelsToEmails(accessToken: string, emails: any[], categorie
   return successCount
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function storeLabelMappings(userId: string, labels: any) {
   if (!labels.labelsToStore || Object.keys(labels.labelsToStore).length === 0) return
 

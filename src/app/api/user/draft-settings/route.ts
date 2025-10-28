@@ -2,6 +2,27 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import {prisma} from '@/lib/prisma'
 
+export interface ContactContext {
+  id: string
+  name: string
+  email: string
+  company?: string
+  role?: string
+  relationship: 'colleague' | 'client' | 'vendor' | 'friend' | 'family' | 'other'
+  communicationStyle: {
+    tone: 'formal' | 'casual' | 'mixed'
+    length: 'concise' | 'detailed' | 'mixed'
+    frequency: 'daily' | 'weekly' | 'monthly' | 'rare'
+  }
+  preferences: {
+    responseTime: 'urgent' | 'normal' | 'flexible'
+    topics: string[]
+    avoidTopics: string[]
+  }
+  notes: string
+  lastInteraction?: string
+}
+
 export interface DraftSettings {
    draftTone: 'professional' | 'friendly' | 'casual' | 'formal' | 'direct';
   draftLength: 'short' | 'medium' | 'long';
@@ -16,6 +37,7 @@ export interface DraftSettings {
   formalityLevel?: number; 
   avoidWords?: string[];
   preferredPhrases?: string[];
+  contactContext?: ContactContext[];
 }
  const DEFAULT_SETTINGS: DraftSettings = {
   draftTone: 'professional',
@@ -27,6 +49,7 @@ export interface DraftSettings {
   useEmojis: false,
   avoidWords: [],
   preferredPhrases: [],
+  contactContext: [],
 }
 
  export async function GET() {
@@ -97,14 +120,16 @@ export interface DraftSettings {
       await prisma.userSettings.update({
         where: { userId: user.id },
         data: { 
-          draftSettings: settings
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          draftSettings: settings as any
         }
       })
     } else {
        await prisma.userSettings.create({
         data: {
           userId: user.id,
-          draftSettings: settings
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          draftSettings: settings as any
         }
       })
     }
