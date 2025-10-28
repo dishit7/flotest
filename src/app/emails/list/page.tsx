@@ -164,7 +164,7 @@ export default function EmailListPage() {
       setError(null)
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/auth/signin')
+        router.push('/auth')
         return
       }
 

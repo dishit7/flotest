@@ -54,7 +54,7 @@ export function SiteHeader() {
             </>
           ) : (
             <Button asChild size="sm">
-              <Link href="/auth/signin">Login</Link>
+              <Link href="/auth">Login</Link>
             </Button>
           )}
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">

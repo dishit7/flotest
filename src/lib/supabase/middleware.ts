@@ -44,8 +44,7 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = ['/', '/api/_next/static', '/api/_next/image']
   
   const authRoutes = [
-    '/auth/signin',
-    '/auth/signup',
+    '/auth',
   ]
 
   const protectedRoutes = ['/dashboard', '/emails', '/tags']
@@ -56,11 +55,11 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isOAuthCallback = pathname === '/auth/callback'
 
-  // Redirect unauthenticated users from protected routes to signin
+  // Redirect unauthenticated users from protected routes to auth
   if (!user && isProtectedRoute) {
-    console.log(`[MIDDLEWARE] Redirecting unauthenticated user from ${pathname} -> /auth/signin`)
+    console.log(`[MIDDLEWARE] Redirecting unauthenticated user from ${pathname} -> /auth`)
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/signin'
+    url.pathname = '/auth'
     return NextResponse.redirect(url)
   }
 

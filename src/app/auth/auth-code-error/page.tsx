@@ -23,7 +23,7 @@ export default function AuthCodeErrorPage() {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link href="/auth/signin">Try Again</Link>
+              <Link href="/auth">Try Again</Link>
             </Button>
           </CardContent>
         </Card>

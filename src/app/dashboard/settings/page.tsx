@@ -39,7 +39,7 @@ export default function SettingsPage() {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.push('/auth/signin')
+        router.push('/auth')
         return
       }
 

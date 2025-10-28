@@ -40,7 +40,7 @@ export default async function Home({
           
           <div className="flex items-center justify-center gap-4 pt-4">
             <Button asChild size="lg" className="h-12 px-8 text-base">
-              <Link href="/auth/signin">
+              <Link href="/auth">
                 Get Started
                 <ArrowRight className="ml-2 size-5" />
               </Link>
@@ -166,7 +166,7 @@ export default async function Home({
                 Sign in with your Google account to get started in seconds
               </p>
               <Button asChild size="lg" className="h-12 px-8 text-base">
-                <Link href="/auth/signin">
+                <Link href="/auth">
                   Get Started Free
                   <ArrowRight className="ml-2 size-5" />
                 </Link>
